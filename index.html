@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViLink Calculadora</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --border: #2d3a4f;
+      --text: #e8eef7;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent2: #22c55e;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 16px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+    .grid { display: grid; gap: 14px; }
+    @media (min-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+    input, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .label { color: var(--muted); }
+    .result-row .value { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .value.big { font-size: 1.25rem; color: var(--accent2); }
+    .value.warn { color: var(--warn); }
+    .hint { font-size: 0.75rem; color: var(--muted); margin-top: 8px; line-height: 1.4; }
+    .section-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: 18px 0 10px;
+    }
+    footer { margin-top: 24px; text-align: center; font-size: 0.75rem; color: var(--muted); }
+
+    .mode-toggle, .view-toggle {
+      display: flex; gap: 0; margin-bottom: 14px;
+      border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+    }
+    .mode-toggle button, .view-toggle button {
+      flex: 1; background: var(--bg); border: none; color: var(--muted);
+      padding: 10px 12px; font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    }
+    .mode-toggle button.active, .view-toggle button.active { background: var(--accent); color: #fff; }
+    .view-toggle button.active.power { background: #d97706; }
+    .mode-toggle button:not(.active):hover, .view-toggle button:not(.active):hover {
+      background: #243044; color: var(--text);
+    }
+
+    .preview-wrap {
+      margin-top: 12px;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 12px;
+      overflow: auto;
+      max-height: 400px;
+    }
+    .preview-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .wall {
+      display: grid;
+      gap: 3px;
+      margin: 0 auto;
+      width: fit-content;
+    }
+    .cab {
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.52rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.95);
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+      min-height: 22px;
+      gap: 1px;
+    }
+    .cab .arrow {
+      font-size: 0.75rem;
+      line-height: 1;
+      opacity: 0.95;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .cab .port-tag {
+      font-size: 0.48rem;
+      opacity: 0.95;
+      background: rgba(0,0,0,0.45);
+      padding: 1px 3px;
+      border-radius: 3px;
+    }
+    .cab .io-tag {
+      font-size: 0.45rem;
+      font-weight: 700;
+      padding: 1px 3px;
+      border-radius: 3px;
+      background: rgba(0,0,0,0.55);
+    }
+    .cab .io-tag.in { color: #86efac; }
+    .cab .io-tag.out { color: #fcd34d; }
+    .cab .io-tag.both { color: #f9a8d4; }
+    .cab.corner-tl { border-top-left-radius: 5px; }
+    .cab.corner-tr { border-top-right-radius: 5px; }
+    .cab.corner-bl { border-bottom-left-radius: 5px; }
+    .cab.corner-br { border-bottom-right-radius: 5px; }
+    .cab.bottom-row {
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 2px 0 0 rgba(255,255,255,0.18);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+      font-size: 0.72rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--bg);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .legend-swatch {
+      width: 12px; height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .snap-note {
+      font-size: 0.78rem;
+      color: var(--warn);
+      margin-top: 6px;
+      display: none;
+    }
+    .snap-note.show { display: block; }
+
+    input[type="checkbox"] { width: auto; margin: 0; }
+
+    .flow-box {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+    .flow-box strong { color: var(--accent2); }
+    .flow-box.power strong { color: #fbbf24; }
+    .chain-list { margin-top: 8px; display: grid; gap: 6px; }
+    .chain-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+    .chain-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .bottom-note {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #1e3a2f;
+      border: 1px solid #22c55e55;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #86efac;
+    }
+    .bottom-note.power {
+      background: #3b2a10;
+      border-color: #d9770655;
+      color: #fcd34d;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-header .logo {
+      height: 56px;
+      width: auto;
+      display: block;
+      flex-shrink: 0;
+      border-radius: 10px;
+      background: #fff;
+      padding: 4px;
+    }
+    .app-header .header-text { min-width: 0; }
+    .app-header h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+      letter-spacing: -0.01em;
+    }
+    .app-header .subtitle {
+      margin-bottom: 0;
+      font-size: 0.85rem;
+    }
+    @media (max-width: 520px) {
+      .app-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .app-header .logo { height: 44px; }
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .toolbar .field { flex: 1; min-width: 140px; margin-bottom: 0; }
+    .toolbar .field label { margin-bottom: 4px; }
+    .toolbar .field input { margin-bottom: 0; }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      height: 42px;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn.secondary { background: #334155; }
+    .btn.print { background: #0d9488; }
+    .motor-diagram {
+      margin: 12px 0;
+      padding: 12px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+    .motor-track {
+      position: relative;
+      height: 36px;
+      background: linear-gradient(180deg, #475569, #1e293b);
+      border-radius: 4px;
+      border: 1px solid #64748b;
+      margin: 8px 0 4px;
+    }
+    .motor-point {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px;
+      height: 14px;
+      background: #f59e0b;
+      border: 2px solid #fef3c7;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.25);
+    }
+    .motor-point.over { background: #ef4444; border-color: #fecaca; }
+    .motor-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .motor-list {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+    #printSummary { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #printSummary, #printSummary * { visibility: visible; }
+      #printSummary {
+        display: block !important;
+        position: absolute;
+        left: 0; top: 0;
+        width: 100%;
+        background: #fff;
+        color: #111;
+        padding: 20px;
+        font-size: 11pt;
+      }
+      #printSummary h1 { font-size: 16pt; margin-bottom: 4px; }
+      #printSummary h2 { font-size: 12pt; margin: 14px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+      #printSummary table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+      #printSummary td, #printSummary th {
+        border: 1px solid #ccc; padding: 4px 8px; text-align: left; font-size: 10pt;
+      }
+      #printSummary th { background: #f0f0f0; }
+    }
+
+    .icon-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .icon-btn:hover { border-color: var(--accent); color: #fff; }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      padding: 20px;
+    }
+    .modal h2 { margin-bottom: 14px; color: var(--accent); font-size: 1.1rem; }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .stock-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      align-items: center;
+    }
+    .stock-grid label { font-size: 0.85rem; color: var(--muted); margin: 0; }
+    .stock-grid input {
+      width: 100px;
+      margin: 0;
+      text-align: right;
+    }
+    .stock-status {
+      font-size: 0.8rem;
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--bg);
+    }
+    .stock-status.ok { border: 1px solid #22c55e55; color: #86efac; }
+    .stock-status.low { border: 1px solid #f59e0b55; color: #fcd34d; }
+    .stock-status.bad { border: 1px solid #ef444455; color: #fca5a5; }
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 14px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .nav-tabs button {
+      flex: 1;
+      background: var(--bg);
+      border: none;
+      color: var(--muted);
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .nav-tabs button.active { background: var(--accent); color: #fff; }
+    .nav-tabs button:not(.active):hover { background: #243044; color: var(--text); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+
+    .stock-section {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .stock-section h3 {
+      font-size: 0.9rem;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .truss-type-block {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .truss-type-block .type-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    .truss-lens {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .truss-lens label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin: 0 0 2px 0;
+      display: block;
+    }
+    .truss-lens input {
+      width: 100%;
+      margin: 0;
+      text-align: right;
+      padding: 6px 8px;
+    }
+
+    .events-list { display: grid; gap: 8px; margin-top: 10px; max-height: 320px; overflow: auto; }
+    .event-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+    }
+    .event-card.active-ev { border-color: #22c55e88; }
+    .event-card .ev-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .event-card .ev-name { font-weight: 600; }
+    .event-card .ev-meta { color: var(--muted); font-size: 0.78rem; }
+    .event-card .ev-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .event-card .ev-actions button {
+      font-size: 0.75rem;
+      padding: 5px 8px;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #243044;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .event-card .ev-actions button.on { background: #166534; border-color: #22c55e; }
+    .event-card .ev-actions button.danger { background: #3b1f1f; border-color: #ef444466; color: #fca5a5; }
+    .badge {
+      font-size: 0.68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #334155;
+      color: var(--muted);
+    }
+    .badge.green { background: #14532d; color: #86efac; }
+
+    .screens-list { display: grid; gap: 10px; margin: 12px 0; }
+    .screen-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .screen-card.primary { border-color: #3b82f688; }
+    .screen-card .sc-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .screen-card .sc-head input[type="text"] {
+      flex: 1;
+      margin: 0;
+      font-weight: 600;
+    }
+    .screen-card .sc-remove {
+      background: #3b1f1f;
+      border: 1px solid #ef444466;
+      color: #fca5a5;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.78rem;
+    }
+    .screen-preview-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .screen-preview-tabs button {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .screen-preview-tabs button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <img class="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAYAAAAbWs+BAABq6UlEQVR4nO29edwlR13o/a3qPtuzzJKZZCb7CiQBQtgCYQuriCwiqGzCNRcEFFe8ii9cd664vtcFQb16BVR2RBREREmABEhCIGQhIQuZZJJMMvvMs51zurvq/aO6uuv00+tZnhn8vL98nsw5p6t/9auq316b0FprZgrK+Sziv2nhlVPC5YLtjiZ0KvOaFiBE/Oqs6NtocMevZns0Th/UgWnwhSYdu7r9Ps5YTwb+7KvYuMYcOzBCZvhsxvprw6GZMGitEYDWIETZe9Pup3GEduN5s0Lg3E4Zl7hjKXDToL8OCEAjRF0mmgVds2prFpfO+c0tLoy0VdJwLBVTHfqK3rMwXh83sHCKUS2SNcfTNs9up+R1UFE92YEs6qQieqelWJoIX5M6mzDztJWMdRGL+9H+3yifsvpFwecs3qLnVTBpH2THTxT81gwqBC6vY7PfZyVwVZCtl4LvtmxDTT0R5A1O9vks6rSgmO04VCgTkfyvqlCNeqoUmdvXdRRq3brzYJyYfJSOBhgk+VqpbmDcFIo0YJXlkM6fffdYuLX/NWLX/Jyadv5mMf4WZ5bnsnXbsnk0Wh5QmfLHAtL6/fwOE5l/R19KmXgjGpFnSd16y3SGfdbE+jbBXwb/NQSuPPEBG9/OvPGo4kOd+bcp/qJ66rR9VOELMy1QFC+5FegKYo53KBO6qnixSR22n8aJQaoUg4u/6BkFz+vUXXeMs7HcpAqqLDyZRagyjSmb8fikIIazBFUFtk1hWtbDhbxA/niwLpMK7biu8CR9mo0D3d+z/TsNBZVXb/b7LLK404CpZynLtMC4nTydeEpr7bg61pps1BTALCEvC+xCEdO4QjotqONazSI+dhM+WdzjWqZZxnDNLLDIX2lSlfWp6541gaLsYh3a8p5Na6VHXb89K/B5lrcKR526NfljMKnANWGcJquHmrqEdcbXharxKFJgVdn1Jm5u/b4vsHBFL09bmx1LMz/OkrNxypRZrCrIs9pFjLKRVt1VZFXeRVO6ysq7iqyq/KT9k5cULMJVH3eDie8mBI+jbau05LFyE6dV70bHYxsFs85WVwn0tHnDxTf9WLKGwBVNPtZNsVdprDo4ymC9pRqN8YqgKkZpogCauDpVUDcW3SgFVGesm7iUkwhIkZWfJhSNZdUY12tXhcAVrVjIC+5npRWamG9DS7Ww5b9X7dfbZ2UCVxUL1KGjDo3Z+iedtpmVhzENi+Tymxsbl+Fyk2llyZcy/tKZcnkZ5GYJuxpLu463jN9GTLbnDWbTerPl6whEVV+XCe+sxulYj3+VlS+znOPM4dU1GONlPhuspTyeYNIEBFQPZJ7AjDtwVfW5dVS9k0fHLMZpWpPDLkwji5qHr8rrmAYU8YNr+apBaB1lSk7SyVmNMotNmNksVV7GzHZE0Q4Hl0b3vUnbXmdSv2p+s+j7uN6Gy4hNlEZeX7lrHOuC6wIW0VGHb4qmqsr6vKi92T6x/1bF9bbMOLQY8Ne/5DZ2mhpqGpD1n5vCsaYfymMad9AnVQCTwvHQVy7ku9Fmo2vx89nRUjRHWl6vn88AG+W2zAKO5fRBUd3rU80poxzLKQ8XypRrngcwTnw0fRDCFbqxsdDM8ueVd61/8faoghiuqSUpYhrr1rnfx3Fp6oLrT08ac7l01I2lymC0fLpB02XiPNe3bv2TCm4RA9lnIvOsyj3Me68KxhPiyYStdi0U82R9T9ARONcHbdqCIgEtI5KcZ1VBb5WLVZY6L4OqbNSkI9rUi3DbUTQmeXFIVd3TTPoUJSzqMF8VLhsnTUuSyviiaZ9UJdvKcU7hEKGqDYhljSubvxjHpd1I92ZSazLNLNooLVqrzFxklqEtlCmwvNi+qs0KrYVjcZr2UVki5XiAyWmZUODqME0ZkUUZn6r3jhVMI5s5LRqKQDmxIUynH7OavVhRFi86qCvsrpU4HnkAJunbzG6BJhpwWtC0zqLyWWGYZTJi2tMd2YAbRq1g3T7J9oXFUxRvldGzkUrFpbWq7qLnk4RDdZVodpopiyML6w1KxsIdz1qlCr5X6Z4lHM99kk0MQT3+yxOMsq1QTi2xbWm+9G96sAEHwU4b8tyb45mx8qBMUxbNgTYBax3zYsWyuPl4gKKMbFGZ+v2UL2h2HPIm9evizsvi5sMEApfNpE0jJT1OOn/cd8piDUqeVz2rA3U9iXpxUz5kF+fWYZ66DDaNBRF138kb32kmnCyU8UOdaZmid0dhQoEbl5Bs+eyhO01wFmVBJxWqMpiGZdCZf7NC6ApKdk5skvrKlpWZMmZ7UxmubD9Pew4w73mdaZFJxrWOgi1yg6veScuMKXDZILOJFp02TNstyuKbxWUkef1UpLym1adVSi1um9aIyqTA8bAxdhwvyEJd+vPcTVcBVhmCqVm4ovm0vMpndXvORsCsFEg2TigbNDtw06ClRt/XSig0cT2bJESawPEyT5e1rjA6tTEKQmul1xdsCnVWkeetGh8Hz0aB6yrluQdVblRZ+rpKYdVJy+ctMq8TU0xiqY4X5VnU3jzFNE4b67yTdaVdXinGkbN4eRxoOs9TBMeDoGUhO4h121e1BWfSfi/bilKUBf1e8zDyoOgQoTxha5KYGRfylHIxTInD67o+VQ3LM8/us6YdozN/mae10AkmY1S3bp3z26SQh/+/gmAVQZ3xEOTfS5AH5TwCRXySp8wsvmLwyw/ebGqxirJJ7rM66de8NHCVlal6vp6u8jV/eX1S9DmPDlcBZXG5AlJkiYpw5kE2QJ+2sGXrLxuPMnfPhTrv5ME4Gc0s5I1JUTkK+KQsY1ksdI6Fm6Zr6cI4WjePAe1tKNUdNPpelZA3oaMOVFmvOu63mxmrgjpKoAxUw7qKmK7sN/vurKEuj5XxyaT9WRRXmr8NunL4v6p744Lt1HIvPZ3jmvYtLbOErJCltJudCXXd41lY3lla9jKcdeO20fcnmIcry3ZlO6FK6x2L+TsXZpm+dmrR1FzHN0sllbWseQue3d/L3zftOdbjZ2HSpN3sIT5EaBqXdoyzGiIbExyrLOWxnNMpmwppYunq9GFZO6fRB9n4tS6+pun8Ire9SFHNenzr96s/fSYfRzt/r7mdk2rSuhbBlDNuaLkXUb0cy5Qb71ldmMTaVcWGRe/Mgm/GSRbWg8wRC2Uv19W2TbRy0QThRu/HagLZzOO4OOr8buowblt51q+5a1fWhrJxoeAZmSPmJ2HY+u3IP0DIbVu9rTv59Y+bNCt+L2c/XF7FeWn6bPk6qfi6z+tmIidl+jLmKOp093ueG12Gyy1bJnR1mHaSuxHKoG4CIJsWFxXxadm0T1NI+6e+Va/DU27ZpgJa1KbCpEle4aLz191UZzadOo05lap3Nyo4zrbRQtM4oY4Q2nLTYMQiuqtoqovf1jEug04D6rrH00jtT+/dGfltVXNRs6jrWGTKJPnzg3VoKYvJ6uLIlj9W/ZCF44GGWUKT+cdRmGC3QJWGGcdnzuJo+t60LF+d9Hi2nG1zndOt3Hfsv65VKnJRitpXNJE7LozjnWTDj6L1nNnyebiajP20woqy37LP88rUo2MCgSvqsKYdkJ0Da/IeFN8tUAVFLnCTGLGI0SdxY4qsVN3YKotjnPGo4/gUCX6VkNVRTHX6fYrTGFo4aKr4x9KfLVd+4rKFKU18jxss14k1Nhqa0JFVNG6f1Mm0lglKVdmyrTJNMsWzhPWJlRSmFc0UCUidrUQODSpOd66bfimrt265tKy//qEL0wi4s25S3rO8rN206i76fRoDXje5M47LXOWK1T3E1X2nTr3ThI1QpEX4G4yvgPXpzioLmpcorCpH3nVVZUjHYdQyTV90LVEeSeNulnQFWmd+mxSy81J57mmZxWqqPIpiyybuVVVsNQ4UeSqzsLRlcWyZkipSVNNwTetDxUoTxfTmTPIgr+4m1m4cqHOo6rj1zXLQyoRkVvVOKpzHU5jQJAaeHeTEcEXM7ga70OwgFhd3VUBdhXuWc3B5qxLGccfS+EFrGa+mz1onTb1ThsexhHXLV7WtSbaw6pCiSWAaeG1SI9s/7ueyiyCzZccDf31SowjGYfSyGKrM9WiKr6hctl11kxhF6eK6CR7HZxfrf8srV4WnXv/rzL95+OoovLz6y+osG8uiPqtrcYoytlmrVad/mvZ3Uf3jC15G4KrSoU1AM8qk2W0gRVqmDJrS4A5KnXfL3NkqtyTvnaLv7m9lWdy8WLDOGJW55OP0exFkaXI9oKL6835r4u5lTyioq0yL6Mh7XmdqpqkXYcpXTAuMMyDHKiPmwjiauk7ZjWzPJHHsRmciNxJH1lrOOm4ugvFCmxnt+C5L928UuJnJOq5YXgazLDOb1eRlWcSmkMU1CVONi2ccgVfJ6v3qa4DHpWtjlEm686EoIzoeZK6rmhSaxDlF71Px7qxS4EXJoDrnaVq6piVw2brzoOkErauA6p676MK441n0XpN+LXK5p5HSL8NRlAtwP9tkUb1+nZKFK5tvOpYwDtOP246qhETR9zL3aBaT81nmqUPzrKxKXWXoJkmmTcu41nU8hTQlgauT5TyW0FQTlmXGxoE6FrtO2UkgT1sfy02+TevO9tMsTuked4zrvzPBWsoy0z4OY7sxX95URZFbUReaZKiKYBouTLaujUoANIVxGTkvFm76rn3f/T2bE5h2XxXF+00yqNWWeAp3fNfxwS1UZQ/rpr+raMrirzslkH0/+2xWsBGC5iqzWcKknkDZHOKk+KvqrvqtzKWs17cT2uOmg1dVflJmn5SZ8gbT3Vw6C2bd6KmGupnbYwVVCjxvXq7uQbZ16i6ip06muxqmcAOqa0ah2RxYlkh3edA4TJE3GO4zUfAsm2nKZqPGEbS6dcPGM//xdkBTUZavrO+npfym5aK6++GKaRtzWqBpar5st0BCSgG+shiuSZo7D28dN2VaqedsXXm0V9HhpqLHhWnsFijCUWdtKDXqL1NIdemuu0ulyfgWTQvUB788xqqbzh4XjjdNmwc68+80aM4b5KqF0+Q8nyWUKcMiRVVnrWod/d7ESxoHJk0IWcina/S4wFHw10vt8TLgxwtk+2MaZ2bmJZvqxAiTWqYqcMe7aoOrGw822TlSJ1Qof17G0M2gKp7Ntq/eeJXRFt+AWkfQLNgYJy+RUOQSTpJxbBKsTmsQily+ujSV4c6mjqclQEXat2qKJft+ncxunpKu4odZpfOLoOh8kSY0TSucSHH4+QmPstSs62LVMbHTin2KQNDspKw6dTaZe2mKe5aQFeY8N7WI/ibCXxRqVMXEdYR43Ji8DGdR/XXaO10F0bBl2WSF/U00R3Xcw/HVpvq5LVdw6iirvLR3U8XgegRlZYrwTyshNFrf5MuEJ+mTfCiYFqjjLm5UPNHE568X1FbjmlW76lia/Paujwuq0uWTuENVsXve57oJkSLI6/em7vsov5av9m9qzafBW4WXeWQlO6s1ixoxPiH5UOWiZMtNs85ZQJN4tCmuOgqqyqUri79cvJP2kft+1WUb4whHkTs9Dk4L7lxtEd48GC3npz/OOr5oCsdvNlQ7fT5dKqeFbT0ebf9XSPM0E051FGWdJI3ly+wihSKYBR9PNy/hCNwMQZtzNgtBjH6cSsY3j4wGY5GlQQNKaaQYvbElUiBlCVuV1DkStaxDUF8Lm1gl/344pTUa8EQqaUob3HJd+WkKfFVnF8Vs6S4AnavZdPLPejd7Wu5tHp1Z/ONBZqXJOH5qufbRaMSIiS/DazJU6Tt1oN42DYPT1lEdKxieNHQoBCKZ+4nYuxyhgRMXfKTDGEKIBFU6V1Rn4N1ybnl3mVmW5qKJadtSjdIaLz5JeCUIORRo5luwtdUyGLRCirI6JoW86aai6ZC8pEt1AkWjELpE4x0TKF40UHE/XB2wa8hyqlUgpeBPP3I/n7kKFhZ9IgWRiplR6sQCSN+jvxLx06+a48WXbCJS4BX0t2Xmerd+kmz3/81P7uOq2xTdOQFaGNaUIKWpSAjNYKh47Bkh73z5aQgdTzhoDVLzf68+zAeuDrh9v4eWkjO2KV53ic+bnrGIjzSsZGVOwGoQ8ZZP7OWh1Ta+p019AoQ0z6WAfj/gFy5b4HnnbiJyBKRev+eBETatwROSe5YG/N7X9/Ef9wccGfrMtyOeuE3yC4/bypN3LKK0MjQd84yspVsjhMe9a6v8/G3fJPA98yQeQyE0UgpWgwFvOflcXnLSaUToeIn5pFI3yRyrC8V9OeHi5XLidFzmtFMW+fcvSpibj31LAULHClwbzmtpWAF6S7z4EoWssljrLEg+PXag9q2E/PHnfA4f2QS+GKXBbgjwgZUhlzxigARCrZEIIjSvf99+PvCfbeieAG0BEh5chWvv6nPl3Qf4u9duoz3iWwoiDZ+5Y4F9h3rQtj8rU0YCUsNKnxddBM8D9MilEuOD0saFvH7fCi/75z3cu9KFzryRdBVy990Bn77nfj7wfTt4+TlbUCp2oY+5lRBoYezzURXyycP7odUikTji8fIkDFd43tadgOWASYkf56bU5pDD1TrzV/QsC+sJ9aRAac2LnzrPY58Y4PnQXhR4C+AtCLz5+G8O/K7A2y65+gbJd/YMDW8U7LoQwr1t00qMS18KKg4eP3fTGoePdmlt8vG6Aq8n8OZE8tmfA68FJ5wc8Pqnzhls2mjT91xxiA98oUdr22a8roqdTI3X0rQ3zfHxq7q8+4uHkSKmOXExNZu6Gq+naXU0XhdTX0fjdaDVEXhdSScJpprGHdn2GisqgeUo5A2f38+9K/O0ey0kCkGI1JpWz2NVzvPGK/Zx78oQIQVRrbrGoSkLVdnm1PFfkG082canhS99PM/Hlz5t6eNJj471TJJwYRLYGI2TI3CC4spFyfN8YpXStKTHK54L0dqACEGkNFEIUQAqhCgShKFxCFYO+Xz66jXzrrYSVzcOGgXrwoHmn74eInQbpSIiFdMQGWugIgUKor7muQ+POGOzT6Q0LU8yjCL+6osCObeACiNUlLo+UaAJgxDZ7fD+q0MGkUJKNyISKKWJIkEUQaQUUaSJFKhQxc9UxQRtGSOsV4jGRRRcec8KNzzk4Xc9hpFCxcKo0IQRtFqSg2ttPnznUmxAyvaUNVEEdeZuSxhb25LShB9aEaGItEJpbb6riEjrTCAzaZKkqcCNoxwro9LJJV7GlugVz+mycOIqUWA8OftnFaIAtFLQavPJL0fGL5cidkvrQiZ5oBVSCh44MuSKW1vonoeORgNsw+sCJTTIgNdc2gFkksm7/3DA7iMtlAdKCbQ2f4kmVgIlJfce8dlzNDDpoWwaSmvQKn5g8OoZaVRDG3xrf+jENNJhZAMKEJ7g5gMD83spKVlas15QmefTEFxjr3XiLWhHWK13I2eVzm4M9dteM1IevzOFNEmSs07q8KKnKFgLkJ5AC9BCo2Uat0RaIDs+1367zU27+kghYrdynI7VKGXe+9dvDTh4sGNcXJEyvU2lSyFQQ8nDTxnwnIe3AZ2kzD1hxCPxb2Wc7fDixjm8KHKTR5m+Sxjffqi6jL4ZWLyep0ArtBZG8JJ41+FooYm9sgZOmbsXbgYCl4CjanXOrm4x3domh3rtryFw9gKE8dAIp8x//4EOeH0n6S9s/t0MuBZIqQmWOvzTF/uANn091hZ6iZSGKT5xTQiiRcpwMb1CxEkVDcOAVzzeY77tESlhMpcaTt7c4oxtATIQeNIwm8DD3prpCYEM4aytilM2t03clzQ6TnNqEVvzHKtmn40F7vEP8fc4y/nEHR20UHEyxCRqhDCJIhPnCbSKuPjEbkJqNRRtDHUzT5NabssZ8Tyh1gkva62MU6w1KJ244pMLnma0bXX4TWQ+Z8civ3wNgXM7chwQxjXUcNnFXR51fh/V10gvk1XU2qThlYZ2i098OWIQKjxvvA5V2liu7+7rc9UdLegIx9VLRhABRJFHd2HIKy/xMS6LoSzS0PI8fvoyiVpbRogWvlRIGSKBlgCkRPXX+Mln+bSkR6R0pqv06P+tdLlWbXyJWwdSmETV009Z4FlnaML+kLYv8YVASIEUJjYNBopTN2leec4iGl04BVMO9WP5cTAbLQGIOBYXqfDFvvpU6tpIqMhSTuN+OPO2UtD2W7zu+30YDgoxKi0QXbjlTp+rbllDCIGqTqGtA5sD+LcbQ5aPtvE8PcL6ZgCFSXIMQp79iIgLd3TM3KF1JyUopXjDMzbzUy8aEhw5SrimiIYSFUKwpgiPLvGm7xvyxqdsNhPNXmqx0jaKlDcto+i00HRdSgNtKfjr7zuZx27vM1gaEEYRKtBEQwhWA07u9PnAc05iZ6+NVlA9h2X5IGnEBoJ1lF0lJb4Hxa3yymH7W95gNBNEO5/76uf2+J33r3J4uYPwVBo7CBPXgUZ6giiY52NfXOY5j6FRPRZMbKL45PUByPkcjSgQ6NjL6/PaJ3mARDE6ByikcXX//FXbee4FS3zg6iN8Z28brSPO26n58ad0ePnFJxjXNKZTCT3KljoTOzGaDCpOUpb1cRYnyXdr5c5Z7HDFD5/Bn99wgM/cO2DvAOZ9xTNO6fLzj93BOQsdlLbJqbJeHsVfLHDTTWKYfNZosCaEdgzrtOqbjZXOA3/9oGY1WdmA1ydOCogiOHV7hxc+5Sj/8KkAb7NHGMVzKbFAaKHRkYCez2evgUNrIVt7fo3LIVIw7iTcsXfIV25vQTfOOsa+ogCQGiE1aig59aSI519k5t6yKz0EcYJHww9dvMgPXbzAIIpQGnq+BwiUjhDOe1bwTKhhU7C2YuM6a3vjhdZxbJcHaXLHYl7/LB+M0MHmdou3X7KTt18Cq2FIy5e0YoViVrYkzlsJlDHkbJhTxx6IHXQrd1rbeNGrYZWbQNM2uUmS+iGXw10uAvvZPlaZZ2OeAygMk1z+4g6i3UcpL8GrHZ2vtEa2Bffe7/HFb67Gv9WvxlqMz35ryOpy7E46Ma2O3REPCeGQH3q8ZmvXJ4osjVmEhsogMnNYHenR8zzCSBNEBlOx0MQIhM20pcF+2i+lrUneSd+r510IINSGbqVhzveRWhBEEZFSxapUx/OTBX9FflCktZkf0zrBkf5WSe4ISDQyVkZiXbw7GieLCoY3HKtr/c0anEkpV1rLMi7jEyXjrOAzHj3PYy5YQ/WV0bDGd3A6TuAJBfT4yJVDRpPW5fVrjHXTWvOP1ynw2qCsHKWxlNBmyVZ7LuB1T+rYH3Nbbdc9tjyB74lE8/qepOWZbFqu9R1J+dt+laNn0lTKjXlvNM6rF0cJYVaxWRrBWLSW5+FJWTiPZdtb9DdqZ41ACUzG1hMi2VEhhfubY/HrUG9DAOPRo+O+FEIaPtGZoiVo4h6s9VcfBDUHcAScGK5sMaw7wO6Bl80qEwLCSNPyfC5/QYufu2ENMddDRGZawE5C45nVGHRb/Ps3JQ8eHrBzSxelVJzqLwalNJ4U3HR/n6/dIRFtM5dnXBSdpvN9CIeCpzxS8fgz581i33W4jW48vBqyb9kwrrWASUgoBFopdm5qMdf21r2vXcuXxB2uB5E6RiLzbtwi7NgI4Vo2d7yyImD+fWAlYOAknEaPuNW0pODkuXYyFwdGIO5fHRLaPnOwi/j5YktyYrcd97Vxw/cPhly97wjXHVrmjtUBy4Gi40t2dn0etanD07Zv4aJNiwiEWQ2DBKGdUGF967WdO4zHTAsFOo679UgUvK4fzPSBEf5lFfLgcBXfTb7EOKxlEwiGUcjO9hwntLo1Qxh3LMvcy5TSGV3IWAQ6Wfr0iufO8VvvW+bA0Tl8XxOu63CJ19Ic3NfjM9cNeP3zuihdrYUMg2v++fohg7U5vAWIolhBaEzshk3QBLz6SdIsUNZmktuFSGk86fHBry7x1g8FzG/uJBraCo8nNf3+Ch950zwvfNTmZH+caUNcUKSCOip08U+19FY9BafjdmoheO2/7eHa/ZpOW5odGhaLUIRac1JX8aWXncXJvRahVvhCshyGvPQzd3Ln0MNPpmSMi+B5sDYc8GPnbOK9T34YnhTs7Q/549vu4+/vPcLufhSbNQ3SiyU0AjGk27qfZ2+d460PO5XnbN+Gjt1MIeJdG7lNlk4MZ6ivu/JIaaNgjkQBP3TrF7h2dS8dv4WKLb09Il0R4QtBXwecxzyfuuBFRuCou0Us6yGWldlwgTP9F0WKHVu6vPxZy/zVhwPk5nayiyDxMLUyTqZo84kvr/L657kTyvmgMan8UCv+5Rsa/Nb6eCk2ElEg2HHCgJdc1AHIxW3ZYCjaDKI5hoFJoWOtJQLhgw47DHWwvq2QuIKpoXOFzQhjs8NuKpJVienVLNFiRfusaFunGhH8tg7R8XdhrQhwBJ8l2qSrU7TzWbKEjxTw0d37+H9uuJ/vrgJtH6/XNuPnRcRp23iy3aeP5l8PLfPZa27mF8/eybsueLjZ0FRkSTL9Zbdi1REBq+i0ELz5zmu4Ym0vdDqs6CgeFAWE5l8pAMUm5fOec7+Ps7qLqEbnXrrWrRoaTHc2jyFSgtL37H8auPyFXby5PoGOB5y0s8DMdemex5du8rnroT4y3n1QWJMyg3LT7gHf2OUjfEiXwaeMIz1gGPGSixQ7Fvx0e0pBm6XWCKXwtUYQIQgRKIRQSKkRInTez9IXB/46DkZsC+0LlQObfV5R3jI5Aj/uaU9FSB2ZdmASEkJoJAqZkV8ZKz2hhVm9pnW80yDCRyG0ZqEt+Zvv7uUVX97Nd4MOfreLFBKlNKGOiEIz76q0JsQkTqRW+H4b0ZrnD+96gP9+w82oePqidFnZCD/H3sKIK7e+eKRNbuC37r2ZDx+9B7/dQygdr9/VSAVSCzwt8bWmOxzyd6c/m6fObUu2ZK2nqEywXKfbtXhuksskzMbcddg8fksrBs8zqvSS83s8+TEhei0ya/8S2nTsows8H1YOd/mXa4YAyfrIPLB5t09fPyRYbsfuq3DiW/NZafDbfX7sKS3sDvMqqpMMvrIZwzjutAuaR/omfVHHgb+xrDqNAd2MY2lXlqr/krfi2FWRLLhO/uL6lRMHjRgUJeL2mraqGEekQbd9PrdnjZ/65n7ozSOFJozi/J4WoET8frzI2+LBHEehtaI1t8Df3beP37r9Ljwp83cqiJjpbVxv+99RuFnPwLBOhC8kn9i/m9966Ga8TgelVLp2FxMLaiFA+oThgD899Zm8ZMsZBFrhF5rRIoFrIgcTbfMdR+BSUEojkVz+fAnRIA2QY1ctSU1owG/zj1+xmqtYODwBgYr4p28o8NtxgO2UT1aWwMVnBVx6Vife81aX6lhyY7dNuGNQQJawA+hujcjBOgvQI8Slwj5CWzmC0XJagIR71yRD4Zv1mDpOxehUiycvC/OOmaMU8XSMIFQab24Tv7frfq49cjSZqB+hbYQOV52lKd4s/eZICY9vLR/hzbuug3YbraXrWMSvmmxtFKzwazuexE+c9AiiWFDHA+M3xFSUPq+oQTl/RYyerSANSMvm60y2UfDSp/fYeUqfKDBxtu1pu5tbaY3oCa75tscN9wwQUuTO6Vi38IZda3zruy1Exy7w1yPWTQCEA15zCWbto65eJy9yBcVlsBI319liYoQ1TgK4bkgtiUv7tXzvWuaV5GMejfl0pz2StSBGGco4l2Gst1GCnjSLxT0p8aVGyjhYBtAqjWFjoUNqhvj83nd34fZGUpfOUGxRJV/ECHn2mIWDQcDr7vwK+2WEp1XskdipBAFa4wufMFzljVsfyW+e/FgirZB4iJJxnBbU3A9X5kIWnbpkpdoVQAezgCjSbNvU4YefraEfGIHTBofpKMOrnqcZrrT45NV9APL4zfL0P389IOp38KRO8wexXAg0UaTZsrXPy57QA3Q8F1Wl6R2rq4F4tYN2n+egMHNRDuMl/cJIlxaHpdnUv6k33zDpkc+K9LwYoSVCyfh7Wk6p/CPiEzc4Lp54G2hILIYXK8U2UQhhf0DU7xOt9QkHA1Sk4/lJk5hIujlemqU1iHabzx08ws0rywghiLRmHc/bpVwxQWYKVFsqTTssnULwk9+9jhuDo/ieT4iId0wokGbHhO9JgnCFF8+fzZ+d+dTkIKW8qYlRcE8WKAJRWWYGJ8dkUUrnL9Og2MW5/AUd/Pk+UeR6XmbOBaVQkYaOz6e+GrEWhniZ6S4NeB4EUcS/3Cig48dWcNS6eBLoK55/EZyxpU2k7ODVATc202bHi6XVLsHIgEYYvSvSbTMVmCt/TUGx3gNJPRERU0BshUZ1ZlymoIqRE4udiXsRB6NG/0QopdFhnxfs7PAnj93BRy89k3+49Ax++8KdPHFBovqrju2K0+wxPoVJyqxE8Jn9B0wJe27Jun6IU21ZFzIuq3SEJyTvuvdWPnpoN6121+zaSGo3QutJj1D3ubS3k/ed+yxauGU2BqY0LeBe4VRmMUY702QdFY89b46nX7SPK66dj+fN0v1qYNZWyrbklrtbXHVrn+c9emHkVC+tDD9/454+t9wtES0biOuUHKFQWoI/4LWXxjGFztfw66h2A2lLE64rmp/aF9Y82L8klrOIrQnK9lEdFnAF2K0gg94appFHIrf8KOjYb3RjYPM/KTQq0uzwBvzVU0/lJadsW/f22y44ld+79W5+9Y69eN12fAqMdqpVpgopuPrAETjTxODrnJeEBjcQE0lIqoGubPHPB/bwmw98G6/TI1JR0l77ho8RtgvlJj5yznM5wfONddvg08oauJR1yhVB/jYfk0kTCCSXv6hjshnCi92PeIpbmJOcpNDoQY9/umpA6uQYblKxcH3q2iFhv4NJgtpkhdGqUghUAI84Y8CzH242XXqe1do1WpfZKCpivEIKI/k5aNaJYO46zRw3qh5F1c8T42Jjx9H3pE4c5VGSrGAkR0LYV820CAoW9BoffdqZvOSUbUQ6ItTanBOjNaHS+ELyPy88lzeduY1oECRLyxLrGp9JoqXk2/1VlqMwSa7YCpNzPvPoE+mSsltWl3jzXdcTtFvJaRbCyZR4QhKqgJ34fOS853F6u2emKkT+uK0HNyRy4/ayWNr296jVnpJ4NzHKwvlLl1P94FPmOevMPtFQI3xzXqR7/IJSGjotPv11wdF+iCdjta3Bk5JBGPGpbwCtllmq46w0B20EIxzyo0/w6LVaZvVJnc3sWdCkePP5YaSlllGzgqWT79l0Rp2+zJaxscOoUCX1u8UTVzsuk+NXiqxrJ2wTTEZXDYf8zMO384wTNxOoEE8IfCHwpFk36cfzpVpr3n7+mWxtSyIduaFYHAea+G5fEPBQEKTksd7d1SN9bT51PEmg4fI7vs4eEeEJz8woJVu9hJkf1Jr5UPChs5/Do3qbRnZJ5EPRqDbWjOtgY+1pDpjkCWzqtXjFs5VJnqzbIqPRSuC1Nffe3+Y/b+wDwpyCFa9AuPauIbfd10Z0ZCYJYbSgijRzC6u88pJWXK82wbSIqOrINB7KwIjfUhaJxcKfaHkrDK4WnCaMxmjaunC51ixDr5MvGf1ihDNSgrm24nXnmj2AnjD7CLPgxTsyzuh2eNq2eQgyK4VsnwnBINIsD63ApW7jOk87sdwmTRpJya/suo3rVg/j+168VMyWj5cBCoUXDfnbc5/GMzedRKiiisOHdBKO6OQsFdfyukcyFuPIWjYLNQRuGiFlOQ7b/tc+v0d3cc0sXHaPIhAeWsan66ouH/9yCNjTl83Ln/r6ENXv4MVrNbVNusTupB4onn0BZle3VghpT86q7gLrwOb2sc1L5MRwxitzEzfk1zcVecvayUyfr9ttYK1M0jrnX6sIRhNdEgFK8/CFFufO97BHwReBnVi/eNMcqAiRnB6m42kFMzMfKMWqTT0nHqx2vACRrBKxeGl1+Kt99/HH+76LbHfSKaAYSbwsATVY4z1nPJkf2Xo6kY7wpFftkI/s8DD48jPJzWWjgtvqBvBVsD5+GCEiPvT1kWf0ePYTzMoTaVcS2/BDSyIt0HM+/3Gj5MGjgVmpLgX9MOBfv6Gg7ZuMpnZiRqHjVeZ9XvUkH3MEnokb05ihvI2OTRr93aYptXIeO45PImtusG/tpfXTiCf9J5G79dpUZ5hkHfUCTAY1K5gOzkzXCAFEEaf0OrSEcwBTEcRGfUevm1CZCLtNhGgTg0eOfl3fNmXGMI6ZdKxIb+svo6Q0SWKMkrU7TiQCFYT8zqmX8BMnnkeoFZ6oFja3E9zleqM7NUbDohw/IefPwDF3KS2YxIfk8he0QAzSJjhtUZjTkfce6PD5GwaYwBq+dvuQW3d3kW0nzo/fk2hU4HHajiEvuKgDVPnvRSCc/o1ZJ3c3Zo5lGdktsP64t8lVWl6AbjOnsVLJbpAVIsPc6ZckvzJycGi67WdzS8afRt9bT5V51rXxmpOAEcIe32dxrWfa1NJoJ3ZOlaRMrFW6RjehSAgQIXPSH6GlGnTmb73QTAJjClyWqCkQEh/6+oIn9jjv7FXUIN3mYpVtylRtPnZNiNV4n7wuhKCTTjInq0o0UnrQH/IjT9Rs7bYIi3Z1l4BdnpWMucupApBiHT+7j/Pqc1ij4W6BQirJHw87PZIxIbXrFG6XAvHVDAZJLQxSGwSp8+q4fq7wZUCPLCgQmAUH8WdEvPvcegfpmQHGJipodXjb7mv40tJ+s5Qrt81lAjato/9SiFtQtHwrO4C2XL65zId6y5DsmSfznRaveo6A/gAptLEisXsktDYneHUkX7zZ556DAQMV8a/f0ND2YiVqGUuCFERa0Jof8Kr4vgAh600FjMCIR2i0shagZd7O+EwspXGsi+vjxRxslqMUVFy+PG49jK6GcJKpKZ1COdLj0hozq7YT26lVFMh4TWKWznr9mGTobZ06VTJakKus1MhyohiBMFs/xEhcrEGY492Fk+Y3XqfPoOXxlnuu5mAUxFun67h/dQWsaHxKljSmldaBOstbxgURWyj4sWfP0du0QhhCcmdU3Mlagedrjh5o8x83BXzz7oA772ul7mTiwoHwBHqoeMoFEY87vR1n1ZpTpmzwPqLpHUQFhn6kqrxDYJOX64DR2/XKj3C4cQftTUF1ILPcTTPytbnCsn5zMlVjLZFI+iUXo7C1GfcycxaaQ1yGdGneU0rheW1uDg7zS/deFyfZpuWTjQcZgbODWiS503Mh83BLaTrp4ad0+f4nKViNzHybe6xBrCWF9PjnayP+4cvLELaRxAtkZar5TNGAVz/Jw0M2PsjGgkziGdcT0/U9U/ciBWED8PTl4rXIVsG5CwfqMrtzZEUSKDpWITEFua+af9YZNJHzYx3QmbqcJVd59WQISZ29nPYLu4fPCGMSC8bLUJRWeJ15/u/hO3jf/u/i5exMGA+sZJed/7MeZO7HRlBFfP1gVWu7JFFw+Qs64K2hhMkmCilAynguSKN7Hv9xU5f3f3EOer7ZJ+ccwiGEIAoEO7cPeelji3d112rDSMwmMhq/gmns71Y6tSs462xlCZLmcYQ1VCMu2wihJe0Wjied6GPrBjaMgdd9cxfGqZwykB476KZmHAsX6xBPgFIBKgwzJxzFi5a1RkcK0Wrzi3u+yrf7R0uErqpdDeLeAshIWZ6PLkq+1yGivrsqhMDzzBW+z31sj/PPG6L6IORoDktos49nddhhaXXOJC2s1rSrT4SAfsBLHxdx0kKbKMq5LVWv+5AL7pmWo00S1c0T2vFzUo2o7VW/QiTJoWJUzYUN4i1QwtHC9oBNIHHr3LYQO3B2ukRYV86FerfOunV4I764pck+znfzdBL7ipHvmjRB5XmCKBjy/Qsn8fTFzehwaFb+JwY1vqJLgcTnoIr4qd1XM8jMPWbpLW9PXZc+/52aaymryriDOM56qVFsSkHP9/lvz5YwNBcGulsydLJa36wWEdqZc4pjvSgC2Rrymqe28puik1Gp0c7UlRo1bE47i1yzJCvoPnAWVs8IUtROQiyxTOUCPLqmkfVtHYuYAuVUkN51Xc5kFbaI7AJQhBCE4YCLuwt88GGX8BdnPI5N8e4SISJcV1oIiIjw/TZfXL2f397zDaQQRDoqEDr3b7pQw4/MxnVZgXIHzxW8CYQu9v1e9ewum05YJQpVOmgJWel+uUR2tImPPAF6oHnceUOefHYvf1d3kiV025nXXpJbXERuxC1SN3P9E0SikDL95rhlShFfPhifBRL/RTrd+WP+dM739KDVrJu0Xk5yOX4d0VorzHyhO47ja4dcpo6FKBvPjhZLB9edeJYAOuIR7Xk+cv6T2epJLpxb5LfPeAxquIoU6f4tEccpQikiHeL5PX533zf53NEH8IWX41qKzN90IceldF0fl0myguU+c5MsFsf4xEphjqg786QuL7gkgBWNJzTCLteyFs0KQPzZLBcSCE9ANOQ1l3r4wtykWQxlDJV1DeIj3TRGyJxpmnT9pxh5I1lRYVe+6/RqLuvitXyz4aDtGffS/nmCzCGsIud7etCqzG6nscya9JEdQ53GaBm32uR33LF03MGs0qsJ6TSDcaOFjndZyHSRcSkkwmamiaQAHQS86aSzeXh3jqE2N6O+Zcd5/OCW0wjDvtnAoZ0zTLBn0Sgiz+Mt936RB4O+4XKruCvtTxVfZ5X1egNUsR+uaDd3VbkpQOzqXf78Lh/5wgpaLTpLqWJa7Hn9IrWAxtWAzSf0edkTzZIic9d9UUfVYSAbh+WUrpPxssIlkoYBJnAXHZ8//foa/3bnASIBvhDxbgej1VXsRguh0VLH802xNY8Fx0OzFiku2dnil55wkmEea1i1w/CMPsglPXbXwPyrhG2jdevq9tkISlymM/pGpFY+F10cK9qjGqwyJY3nZTyr5gmr5jV/evYT+PrN+7g/3sWgdCznsYZRgC997gqW+Ln7ruYjZz8nvqZZWp1aAlnPrkkPmPIbfi5lXaKlZ4LpZz16jovOO8yNdytkV6C0M1BuAiC2Fp6AsK95wZPhjK0dIhXh5Z4SVNS7qRUfEVIn0Bb2u05ju7yslwnhhNNkG0ep2HUD4Um+fl+Xr9+jQUZppk1AoiXj4wFGFz5E6XMPGAoODUJ+6QlO3bbKpI/APbJgZGe32y3uR3erjhjtodowIrSGBmu00rNOnEpdxZQYN7GuYnsVnxE6QajhjHaPPzzjCbz6u1+EuZ7xy5N+NwgipfFaXT66dAfP3n8ab9r+CLPWstJw6MznOm7n6HO7tt75q3p5Et+2fl0C0zFt3+e1z5UwNBorDcAF2ODe+nZCxru61/ixZ1g/3nJpXn1FtFjudr6nYYcj5yr1R4pabP02dy0hMuE0rTWyJfF75iBVr+PHfx5+r4XXa+H1fPyeh9/18LoSryvwux5+18fr+bS7ptxiZ9SdVcmStJTR09gxjkmzQuQKwbp2NbVwqW0z32zMZmjStjOVSqsSKf0j1QjzfuqraPcRAD6CUCteuf0MXrftPKLhGlK6Z3WnfKDRyFaHX977VW7oH8YX1l4WQdZQ5PGUKxv5ciKLX86DSQUuC+XCZ+8ReMVlc2w+cY0wEsnau4SOZKCkWag8gPPPiHjW+d0RHOtpdlVqMXUj5QWkE9cuxnxXO3lfpLHnCNYYgVKaUCmiKP4LIyIVEenIrKRXZhd1qEysEilNFCnzXWmzLzAatdjGjlo688fLvbEo29QESxInx4pN5yeIKkGY812SA9el00PrjVfsPFqlat8zT0w35tz+I8zubq01v3fm4znHWyBSIUJ4gIeNRbUwu80RgqNywJt2f4ElFVZIQVbgikoW8ZuBzMR3ttBYXVsC1nLYP8uA+VMJUphs3enburzgCQq9FiQbGw0422K0Nn74cMiPPlEy5/vmkKBCWqyQ1Enw6MQVS09M1mkOQuRwzLqmZ5SLm6IfOZnZPhOj5ZMK7Or6jKYXYv2ePG1+19JRkq6yym8pVgLcc7LtSdPN1naOgohPXrKJEmG3B+WQEkeoWHJGKHTuHFhXR9yGHX6bPznjSXiDIcJRkkkhYRSSLzpcO9jDrz1wXXw+ZlH7pmNsauyHKxI6++r4A5BCcSNs7f/9eW1oBbFmsq+lnSCAMILupj6vuNRPH0+DumTJhvWy4jqTpU7ZrS7Jm/HvAqNhY02buMEp/jRbl/5pHe+mFpDEDHH9KbNaK+C4gtaOuNlFqxhsNbHIFlyHR+wAxscVxH/x8YDjdqtGIrR1p11BSz8n6iVRZK6Cc11iKCJECuNavmjrKfzMSRcSDZbjqYJYsScWO76UsjXHnx26gX86cg+ekDV3FeRl8quhYPtxXe1vLda4MLr6IreENEx+2aO6XPzwAQQa3zfXJMWrvZAe+L5GDiOecYHigpPjq3RzUTpx1DorUkClkHGqXiE9hZAKKXR8/5lJ8KxnQ2MRpRBIKUwZadP+8b9CxHcTaAe/RnqYf+PvXtxGact5mPckSCkNfclRfIahzNXJ8bQB8bQBxuUy0w0y6cM0yjP/94RECs/QKUSCXwqBRKenX1d0nbvu1E5fiLjfEryY4/JSRClCT/hIPDzpGZpixWr6QZpjyRMyRvtfYs4y+a3TH89F3e1EaoAv0/vrTH/E1luDbkl+4aEvcn+wmmzl0etkweVVl4/yOiLfEB03G1CLQACRUrQ9n9dcBmolIAwE0VCghgIVmL8gkKhBwKufYroxf+6tiEOy2msUokCjhppgKFCDuM5QEAWaIAA1zNQXWyGtNYMgQoWCMDKnhqkQVKDNX6hRoUBFMsGpQrMFyf4bhRCFIi0XP4uUOapOKU2gFCrU9CNTubGFmoEGFSpzA2pk8js29lNKs6qy22CMAelHISoKCaO4jsjQGqgIFUUMncaqOusqlY7pUKhIoWI8URSiVEgUhWi7stxZeTLQIYr4ghCtzEQ/mgCFUiHhyLEMmYhbmJ5Y9DzefeZTaQdBjCc0ay9VGNMREqohSkh2RYd4/f1foK8V+adtTw5jTgtYYqyvkpetmR7YrP6PPm2Of7jiKCvDjnN3mVHsoYJt5wx54eM2ARo/USUuLUV0udrVcfXi305YDDnv5FV6PZ8QEysaj0QgfclwbY2FTsepJrYUCC7YOqTrL9NuEc+vxfNLSSwTZ/6kQBAfaiQdNzP+1zzTCXlaWFxGS/fbinPmrQtqzlu8YC5kZZOg28aYG6feSMO2dnwDLXHdGAt0QU/T8QPanj19y9TtScHAl5ze9ZJ2Si0Lu9X+vOgJzumA6SJDoxDx7g4hkaLDnD3dN36pKwSPbrdZluYUMC0MHUorhCcZthTbkt3ceXWbY/AirXj6won8+s7H87cHbqbjdQnjmFzH7bYy3mpt4jur+/m3g7t46bZzzF0WdnymBEInqsXtptGMVwo6UyYXZcHv2eC/6LciMDQFUUSorAZL39RamyuA69/MQX5SYj0tkdYEkRpdFukoZK01Hc/LHN1gCvQj927uONEh7BSuKWdyGyKezBZpnBJPUqdTUCNpEqcq0xO+gFacINFAoBSBdlVIwmKxjAvayYZcaxc1A6XtdX1uUwylQtAWgpYbfxVCPGZaM7D3/SVPUifWE4KOGHXLFZp+vHTNVes6flcj6AlJS7gJpCIqTIkVZY7qUzE2+058RpdxFgUIrZOjGdI2lhmVrLy4m7RH+atA4IrA9WebQp5wuYTVw1BVsk6Z0fotHPfe9ZTAHe7peiLjQxPFa8s3pb3pO3lCBPl8kud+jm4vsrj846fTq6HMrrplZgHj1jv9KKA+DXXqHn3H2o9q5TMOuzfFV/yOzaM2oaL+/KHrTUwbGsZwee5g9vdx8c3qjSIo7v5IuVrJZNhGj0mrD7NUZ1prIk2yTFLE2bfyuqspqi6xvi9sj7lL3KzbWg9nEzrqe0X18NUZ22xGuyg3YJzWQiy69Mioqlgur8Km7sGxgqaJnuOrXRpF3n2a9S+DnwTsacRuvUU9U3iW8nECVogmCSmyScT1/WNhzCzltDtu/RzM7GOq4jZcdftR9i5rfE8glOLSh/XYvtCO99vN1GZRpw9MwlFw+6FVvr1/QMeXBBGcf0KLh23r2QOnNwx0nNjY0x/w9YNLSM8jVIodLY8nn7jVbPcZ+3bRen2y8ZBVwPXoOga7BbIwm/mOFLcLdbhQ8fN/v8b1t8/Bgg9ra3z+fw557gUdIu2eyTgLOuq5SkqbFP3Hb13iHZ+PkJu6qOWI//GMgD945lyNyyqaQtn46JgeyVf3L/Hyq+9Gzs2hgoBnbO/wxcu2xFnRcS3veO5jlsb1OCeFrMDVSwD6o/5m9oU6blbWHDdtzDQ6tG499aDT6yF78/g9SSgEvhc2xOBCnkKpm2IpE0xA+shOh063zSAIacd0Vrk1zSGbrsofbyE9ZKdHq9MmkJJ2q42xxRtxnW+Zy1+WbivjP3fs7DKuOu8V97tff1BmO7k9G/zj4Ygis3HRHHWgpuCe1VUqzdLiSilDY2hWTMxWbdVIpWgV06TNv3YlSMNTvupDVpmV0ThJ70yvZxu4lGVaokpY6iQcivG7e6XGabo7UV0Hhz2qb5Z1TAYGu5dsbh3NoJU7gFkszWEUR5owSKaSC/Nw62tvrmaL3hhtexmeZnW6yrLIONkymirPokLgsrmnInNd9v5oir383fS7UhqtBdIbTQAolcYweZbHZul0jAPiSx9dHPEJzkLa055HEQl3DAu5N17aGivxbB1RfES7FJbOtB9UcsqYecFcPp+fbDf7W820hPnXcXJcXtBmYXFKeNrfkTYyIDPTBmhNqO2C4myENUqNxqy4kaSpfojXZ8a/69ETndb1nRVL+54iZkAHn9aaCNbV4+LQycJis3bFOHumvaZ92ax5zA/xsRTZ+wfNGk2zFG99lXWz1+tbmgcTJk3qukl5Fi9LVDoQQrsbR0OW1jRhJOh0YK4lsfcyR0rlHJ8Qn0ModfxMEUQhK0NzMlavJZhry+SC8EivP/5c2GMQ4nXso0c5gBYCpQx+L95IGeqQpYERjoWupi3jdY1aoXR8Rx12wAXp/jjDKJZ9st0kR3a5x+3TJm42Qm13uwusZjVLlQz9hk77rmI51KxFER0p2dSyK+5FfAVvnNgYGRodJ2HS1fn9KGIpVHQ8wSbfox2vg4y0TtulU+Fy5d8uC/aEEZQIzdEwItSKtifZLL2EKSOlMju2YxHLSEWkFV68+3+gNUMUPUQizBEaL67TlFEsqRCNZkH69ER6uILFpZPa6kBW6MYWuEkdo7Kgf/2zhPkFXHXTEh/+4pBr71DsX/IJlGS+HXLeyZLvf5zgR545x47NbSKVyA720E9PCiKt+MdrjvCP10TcskdxdK1NqDQL7YBzdkhe8BiPH3v6HFvnWiilc3aGO8kA5zctTFznSYEm4lPfWuMT3wy4+cGIQ6s+Gs2muYhHn+Lzkkd5vOziHm3po1Rkdh4LzR9+6RBfu0cw15WsDQLeelmXS0+fH8kuqljYPvbtI3z4pgEL8y1WV0Ne8Wifl5+/JW4vKWOLdG2gRJvLNzAK6TuHVvnAt1f4yp4BD6xplsMWXX/AyfOCJ+5o84rz5nnyjsXUKAnb5lTYhiriY/cc4ZP3LXPr0TUORZqeUJw37/OCU+Z588N3sqnlM3L6dUZUtGOBvnH4CB/cs4+rDh1hXxgQoJn3JWfOtXnOls38yM6TOavbM3e+xRZJAA8FA95x57dZ8cwGpHNaHd519oVct3SE9z50FzcOljkaDPilHefwEyefy0CFdKTPIFJ87NDd/MvS/XwnOMohPUChOUG2eHhnEz+wcCqv2nIuXSlji120x7GIl12hK3bqa1q4Op5xVdlyHHZg9xwe8It/foQPf6mLDjZDy4OWMJRG8J17Qz7z1Yjf/dgSv/8TPq++bBNKiWTfnCcltz6wxhvfu8xVt/bAmwffI9kQBnznAcVnrw/4088t8VdvbPGs8xcdoctop8yxCNZi3LRnwM99eIUrvjMHomvo9AWICJbh5j2KD10f8OQvHuE9P9rjsaf2CCMzt/fvd2g+f2MXFj1YlfzgRYpLTyc9BR0rcPDNBxX/eIMPW7pwZMi5J4X88AWmjIx3PutYc7tTzNaK/P439vK/rh1ytC+h1TJ9IYDQ47uriqv3Kt598z7e+uhl/teTd6Q7E4VxfT0hueHgCj/5tQf42mFASIPDM97Ddw9F/Pve/Xzi/iWee/Ii0vexy41ThtWJAjkcBLzt1rt5/4MHGAiME+FJED5EEbcdXeVzhw/xB7vv4VfPOoufOf1stNYoYVy+o1HI/91/P7pthuVR8ydw3t7d/NyuW1gREbRbEPW5Xw0B6Eif61cO8Zbd13DN4BD4yvBSvHfwPt3nxrUjfHzlbv768Hf4m1Ofwfmd+B7wnIOLUshOA6z31vJA1psDy1qkvODGbr/PK2txZN8z3+3A7trf5/lvPcKHPncCfncT3a0eoiVgqGAthAhaix7tE9rcf3Qbr3mX5K8+v4yUEEQKKQS7DvT5/t9a5qqbt9FZXEB2/Pj9AawMYRjgzUtaW1vcue8EXv5HAd9+cA17ZwFYl1InzbAUWzfyK3ev8pw/XOaK2zfTWujR3eSBpyAYQmCsTXtB4i+2+drurTz/PX2+sWeA7wlAsdj28OZ85ubMoUCtdWekpJ/nfInXazPX9fHmfObbaf+mW8eMmFhXy1rK37luP2+7MuSoWKC92DMSHAQwHMBwCL6iNe+jepv4/W8G/Pr1+5BSxvGaQgrJV/Yt832f383Xjkha3TbtrjRuYxgaH12Cv7jIVUcl77z9MLTaRuCEG68ZV3XfMOCHrruVv9pzmKA9R6fTQ8gWRAKiAHSI7/t02j32CZ+fvetufnnXXUapxGMjBWxttfC8Hn67y74w4ufuu421loff6mKPbPBjq3jj2lFevOtKrlFHaXcXwO9CKOKxGkCkaHsdWu15vhId4GX3XcGD4cAc71FpX4pkpzRpUtd65QmLu1N7nDkfgdIRaEk/Cnnduw5y050n0TnBJwL6SxFbNve5+JERvS7cu19zyz0d8Ht05xXR3CJvfs8KDz9thcsumGMYhVz+Z4e4997tLJ4iWVpVbF1c5eXPiLjwZA+tNdfvCvnoNzoEQZf2oubQ4S383j8t8f43d0DFRxU4CQ23WzwpuP/IkFf+ZZ99q9to9xSBjghW4JStK1y4M8ITgtv3C+7e34Zum+6iZt9gKz/6gSN85aclJ823CCJz6E8QER/+U97r6UFBo+dKJUmK+OgB6xV3PMmV9y3xji8NaC1uRsqIwSDkaSdHPOcUn+09n93LAR/77oC71wReR+Mt9Pjjm9e4/BEDzttkdszv7Q95zZUPsC/q0eoQb3oNObGtedRWj54v2d0PuGllFVo9c/0vKokLU40g0Wh+6sY7uXIpoNvrEBIxCCIWJVy82GZRCu4LQm4cLBF6El9KmOvxB7vv5cx2h7eccppBpeL+0BqpNQ/pPkL6aDVECsXDZBslepwoWoRa8ZZd17JHDZnrzrMaDjlRtPjBxVN5WGeRQEV8ae0h/n34IKLVoiN73Boe5P8cuo1fPfExZlpj7BUy+eCnwwrNY7a8DGR9HCbmkvie4G8/c4Qvf20L7W0eUaQJVwP+2wvX+I0f63DWST1AEoQh//bNPj/9niPcu38zeAHnnzZksGp2owah4pKzfe58YIX7Hupy9lkDPv22DheeMj9C43OvWuIN/2eI8jqIruQLt2sO90O2mJ2a6anOkGhMMImcd31mhd0PbaK9RROFAqH6vP0HQn7+sh7b5013LvWHvO/aPm/715C1tXmQA87eqljpK5i3VwG7f0V9K9KrsrT7u9PTIv3Nkqy0OaH4qTsFXzu8QhBofu1pHX7zCdtwFeNPXdTnhZ/Zzy0rPq22ZnUg+I/7lzlvUwcp4I9vPsCu5RatRRnvjh7w8+cv8tbzt3F612y4HaiQzzx4hF/41oPcG7aRntOemFk9KfjYA/v4+N4jtOfniBCEQcDLti/yzvPO5IL5LiAYqJAvHDzMz95xG3eG0JYRwvd55z138OJt2zmj03WmnjUok8VW4YAf27qTnz35bM5r95AC2kIyjEIu7i5y58oyD64tcWFvCx8/4xlc0JlPsLwdeNue6/mDwzejOm2EJ/ncyv28Y/tjYgU23S1c/qiwZAc/Gwy6v2ddRJ15XvXZvOJJQT8M+YtPK0RvDoEmXNW89vkrvO+tmwEZp94VvtfixU9ssfNXV3j9Hx3g9S/o8sbvW6TX9tFaM99p83v/bTu//PKAD1+1yoVntLjwlC5BqPGlTu4suPxpi/zvzx7lpvhe8P3LbfYchi073VY4TB5r6t2HB3zo6x5izjdn+g+G/NbLAn71+ZuBeBpCCBa7HX7mGR0Wekf50ysO8qsvnONlj9yatF/aG22Krv90u8jksxk54j23N1MXOFKay87YxFWvWeDK+9b42p5l3vq4LWhl9nXbzOqZC13efNE8P/OlVby2R6gFdx01q1UODEI+eM8aomtismio+PnzF/jfF59i2hrfyd6Wkpedso0z5jp835d3cVj5CM/whc3+Rlrz3t37we/gacVaKPihbfN85DHn4xPvMBCajvR4wfbt/HPvMTzzm19nX+jhS58Hw1U+tHcPbzv97LTdypz9Eg4Ur9h+En933sXreAs0f3b2k/iV4RofPLCLpyxs54LOPKEK8aU5zEkA7zjpMfzt4TvYTwgCHgxXWdIhm4VHerFWVhbGSyg6++Hsv3kpziy476jMb7rgsy2TpsO1NsmOW3cNuHVXF9GBYSjYvLjEb1zeQ2tJqBQtzx7eYpjpiefMc+2ftOn65mYcG5ADhEqzbaHNW76/HdepaPlwtB9yeEWxd0lw/4Eh/bBlYjUhCCLJMEjvKRMjx++pZMvJV+4MOHjEx1+EcCB42Cl9fvG5i0ns58UCrbVhosufuMgrHhcy57XMb6RZ2OR8S0HhiV+mvQpzHqRBLLNjLsBOCaQHvqYy+szT5nnmaVaja4Io5KE1xb61iMOrETfvHYAniAAtBWvxcN5wcJXdqxqvIwlDzanz8PaLTjJziIg4DQ8ak8F8wpYFXnPmAu++6wjS74KIsHfT3LM24FtH15Cez0DDohrwzvPOxUebE4+Fl3BGqBQXzC/yk6ecxm/evQsxJxCyzZUH9/O2089GxHyDEETC7HD/xVPOAyDQOpm6sLvqQ605td3jl06+IO024bE3HHIwGnI0HHLHYBkhJEKZa8SGMV3GAXQ9t7pLu4ohJ0tZNxNZN3bLI9K6QAbPHfcHBIMWnQ4MVjSPuRDOObGN0oqWN4rNpPw1Xd8nihRCyiR20Vrhx1/u3tvnc98acvWdEXfukxxcEhxeVRxZazEIWtDqIFqxsGZ0ivHS0n6wj299KESoeXwgHEZcdq5mzjPzYem0AsnJVFoL5rxWMnWRHkXpDGLZ7ijSxMNonzl0mh9JXGHsOVImwbMWhfzn7hW+fN8qNx6GB5YjDg4jDgeS5VCDbCHMgStGUGOU3zkSoLRJEIdRyFNP7HJiyzc3irq306DxkGgNzztxM+/+7lEzCa3BXu26a3XAIQVtXzAIFI9a7PKIhXkU8UleTntkfO7oS7afxLvuvY9QKzSS2wdDQmWSQclZL0qzvdPi7E4PMPcypKpexOdOmu+3rB7ms0t7+Hr/ILvCZfaqPkfUkDUdsUaE8DxzzEVpErG+S1m0s6Th0i7TlGmBxXR4xQMVp5EjzY6tZlWFduae03fMBK3S5ui5hKp4MrgfRvz2Rw/xl1/wObDUA69laFex2hcms0YrVRrmgFLn5A8Znx9nrUfMyUdXo/hsREApdmxqxQObJVOMCIGX5IJF0gass1Ilc8nZk/Yv038utyYuHLSl4Ir7VnjbVUe5bl9MoSdItba5oB4p49tlROyyxm0dqthLVaBgZ9uUUTpVcG5zhYAdvY4RiNjiW2dsKQyNVQLQITvaC3iYQ1e1kNgjzE1zzZhubbdYkIKDWoBQrEUhq0qNHNiMgDnl0coxEmZlDRwJI371gW/xgaO7OEJgfvQhyarH7q+wx91pjVZqHb5yyMbisnAbl59Qvg7smrC8c/eqEiS2A12z6+IYdTm7LQXCi3lUsLJqhWD0NHn7ptYiWU0iYoHQmEzea//4QT7+nycgtnXxe4KwH7J104CztwecuQ3OPElx3o42777C5zsPtJEtER+q7NRhrttJjJwViI7npQIiJMtDFbfQHEsw4jzHSkFp9yTDGFF80pUQGqSbBhh1wU13xHNe8fov6aysMUIiAQ+0PXkL2p7kivuXedGnDrHKIq0eBIGiJYecuxhw5qLk1Dl4xGafO9Y0f31HiGx7I5LfspnGeFXMkYikretjcY0WguUwREUaz49d5fiw267nATpZzLwchQZLLvsYRdSPNAOID1cyhxa1rbcoU77M01VxwMJqpHj1rqv517UHkZ2ueScYsF21OcvrcnK7y5ntBU5s9fiTw7dySCij+PPIKoQqN3OU5xtauPECRbfCkV/iHj/rJMBXhAHQFnzjDji0ErK5104mgFNLZtb++XEwFMZpdd+TfPy6JT5+5Wa6280ksxeu8huvDnjNUzuctrUTB8oAio9cu8xtymTjdGbkR6JanQ7rWSd6oOMLpFo+1+8yWlLkJD4s3Ta2DCKdrH1MjqQDUJKloc5dMC2AgwMNMt7ekvV9k7WL8RF6SV0Rv3rVEVbVAt05QX8t5NlnRLzzSZu56IQW8y0vqevDdx3lr289guh6I0N8+oIPIiLUbZBtbjw4JNAqYXPXEYxQeMC1+5fRKl6WF5EcL35ar01PCtaUBs/j5uU+e4MhJ/omKzyyVlab9QPfXFpiRWvaUhCEmtPaXbqeRzS0ayGLeVHFy7P+/uDd/Ovq/XTnFgnCiB1a8Js7nsD3L57MKa1ecsLbSqT4P4du56AOYkVRiLoE6snHFCYZqqgrNs/21N9Hntdj5wlD1BD8tubBh7r8+adWkdK4J1Fk5ljDyPDU8iDkjz5xgN0HhvieiIVP87lvBAi/h0ARrml+/FkR73jJJs7a1sEXPsNIMwzhwKrirv0YP1Az0sPWGXKPBbcfLz1b0O70CZTA62m+ckebT920gucZwY+UoTOITCbyhgf6/M7nDnB0ENDy7F3egoW2Bh0Z91a0uOY+ZSZatTlQNoxjvlBHXHlPAL4XX8whRnrTZAGViZW0To7ovutowA0HJKIl6IdwQi/kb56ziUt39JhvSZQWrMVJom/uHxp32zogMY7Hbe+wua2IAK+j+NbhIR+79xCelITKZB4jbQ6hbUuPA8OQv/nuIUSnZc6xdEzYOXNdHtERiEjT8jweHEa8d9cDps2Q4AvjpEegNe/ZvRs8Y7l1GPL0xc0AhHb9WfyvWcic4auY8T979AGEaIFSRNGQt2+7kDdtP48zO/P4QjKMzBrOWweH2RsOYjYYZ6NsfWNUInAi87kuEdmyxXiEgCiCbfNtfujpCt2PEALkfId3fsDjr//tEL6XriTyPTi0EvDGP1vif7x3jkt+sc9vfugIu/YOADi0HMTXtgnQijNPMvUNAjOgbU/Q9gXv/vdlHtjbodUyCRiUyBh+zGDG5NpEzKNOneM5F2r0msITEcrv8JN/F/GFO1ZpxTR60qzyuvnBNV73wTXe8ek5nvTHq7z36sMcXDEp93O2xxlXFGLO42M3Kb587zJt204JoHj7FYe58cEOXkuhlEwYLO2/2O/VjsAARwaaQWhjTc28rzih00ZrCJUAFL2W5O7lAf9wxyqi7aMjAJms0Dh3scezT+qhByEeCu21eet1+7jyoSO04iPDPSFoScnutQGv/tpd3NU3R69nVWxPSl55yjZ0OEQAfnuO3737Qf763nvxhUiOIPeFWbr1k7d9m6tX12h5LUI0cwhes/N0gGStqXU/sldMadsvwOEwRMfZTNCcEs+/DZXxUtqeuSH3vQdvYyiCJMOpRkLlIt53QyRd8T19v8SlbCJg4z4XiHgN5C+/cpEPXbnE4eUt+L2IQbDAT/zhgA9+6QgvfILghHmP2x8c8vGvwJ33baJ9YouHVnr8xl8c5czty/z487Zx0iZzBonWAtHzeP+Vmhc/fpVHnWKurtq3FPBnn1/lXf/SQc51zSm+WqKVznjiNngDd6evFJLfeEmX/7xlmTBcxO8E7Flb5PnvXeOHLzrE08728H34xgMRH7vR41B/M51tcNv+Lj/ziT0887wW2+ZbPO9hPu+8oo/Wi0gZcSSa50X/sMobHneYi3d4HOmHfPL2gC/snsPrdExcJCOyc3bmYNZ0WG0yY3tPMOcplrW5jPK+JY9333SA/3HxNtpSMIw0Vzy4xC9/9TD3D1pIz0fFF9Fb6yC04FcecwKffuA+wmgO6Skeijq84MrdvOz0gzxl+zwtT3DLkVU+/sAqDwzB77QIAU9J0FHiqmuleOPZJ/P3Dx7g5oGi4ykGXoufuGU3H3/oMD9w4la2tnzuXFnhk4cOc9Ogj99p4wkI+oqfPuNMHr24AJgstZnGjIPpnHDA3CshONHrIgKQ2riy7z14G0+aO4HTWyaree9wjT/cfzPvW7ob2e6iCEmOQKsF2bxGHq+P/jb29pxpHahjr6Q666QOf/1LQ17560uE/UVavQjd6nDFdR2uuCY0axV1G7odOnOaMAB9tM8bXxHyuuduBTQvf+ocf/nZPhGL+D3Fdx5c4Om/tspjzzqKkJrb9ggeOLgALQ8pQpAy3g9nYyED5nINs0hZi1QUg0hzyZld/uhVQ37mfcuouUXacxERc3z4+i4fvj6MYykP5nw6PcVg4EG0xPtfu4kLdswTRhFPPXOeF51/kE/fHNDe6oFQHA07/L9fid9HQGvBzI/pIdKTSBTS3jOXDALxXeB6JM49Z1ObZ5zi8eldmtYmgZZt3nHNgA/d/iCnz2v2rGluPCRQsgcyQngREo0U9koqGKqIS7Yt8IePP4Gf+9oBmO/QbkcM9TwfvC/gg/fujwkAum1oQxgE+L4RWnOdt8mERkKz1ff5m4vO5Qeuu5UDgU+7pVHdHp87vMbnDi0ZXJ6Clk+n3SISmv4g4Ae2bObXzjrb2UkRX8gRb0LycoTD/vLSrafzsXvvQbVb+H6LLwwO8OS7/o1HdjYRCs13hss8QB/ii1KE9JBKrQuV88G1fNmkYrFcjB3DlQtb1qSWg5SgIs3LL13kk78jOGPbQYKDIeGaQMxJWpvbtBY7+Js6gGJwVKP6K7z1lav8+Zs3IzAr25/36Hne9ooB4dFlghWJ9OHIcI4rbt7MF27czAMHt8AQfvTxR3jiWX2iw+ZSkGgwOtu10teovmI4BDXU6UUdwqx9/OnLNvP+N8KOzkGGS5ooADkv8Rc7tBY6yAUPQhgcjTipc4QP/bjgNY+dNzsS4ltg/uKlizz21CMMDw2IIuOK+XMSv9dG9How0Fx8wjJvuGgNdWTAMPRQQ7MO20KgzIUmayGooWIQxql+LfmDyzZz5vwKg6MDs6HTa3PzQZ/P3tfihkNdVNhlc2vAq88NifoDhqFADTT90PSEFGaRwc9ecBJ/dulW5oM+wzVzAYbXkrS6Lbxuy6zOHw45QQ95yzlzhP1VhmGAiiLW4o7zkIRaccnmRT79hPN5tB8yXF0jDIcIT+J12ni9tll8jGDQHxD2h7zhpG18+FGPZE6mYhWhWVIhKjLHSqxGUaIkEn4SZsrhR084jTdsOYdg9ShhMERIyQPekM8P93LF4AAPyD5EA17aPZWzRI8wXEOpgOUosJMmU4cJLvMQOZ/t9+YgPbPK4EVPWOCSv+jzl/+8wj9evcKde3yW+0abtNoRZ25TPPWRgje/sMXTL9wC8aSrFGaq4HdffQIXnrLEez97mFv2SJaGZkKz19GceWLA654Ov/ziTfzKhw+ydmRAb94jGqzR8zcntDzmlD4EIb15yaDfZ7FnfH8JeJ5EaXjdpZt45vl93vOlVT59i2LXIZ+VoTEzC+2QM7ZrXnSh5Cef3uOsLR2TtYzVm9KKUzd1+I83buP3rzzCx24ZsnvFIxgIpB9w8qLihRco3vncLVx/3yrX3bnCwnzEysKAsxfaCZ1nLsDFJ/eZm9OszK1y1uIcAKFWnH/CHFe+Yge//dUDfPa+gL0BoAWe0GxpCS7dCb/+5K10vIjb9uyl3RX0u0POm2/FbZVIaaY1fvr8nTx9xwLv/vYB/nPfKvcNI4IIPE9zYkdw2c45fv3RO5jzJV+97xBe1yMINRf2bFbYWKdIaZ68ZRNffsZjed89e/joQwe4Za3PUhCitKYlBWd0fJ68dStvOOVknrdte8JRNnbrInhqZ4ElT6BVxOmytW5nuAAQEh/FX551CY95cDN/c/BObo9WGQiFEpqe1FzAIpdvfyyv3/YwfuruL7GA2QK0U7acedUiw5Ll+3p5joqDYIugyF+dBEz4qyKBFy/CU4Tc+2DE3sOKQCm2LnicfqLHYs8HBFEU7wh2Mh3KpqUJuWtvxJ6DRledsMnjnBM9ui2zQSISEfGVgyYvpX3sZe+RMPuS09PhTTpTODfFuBtfBypk94GI/Stmvea2ecFpWyXd+EKIyO66jrHZJJtllKPDkLsPRhwZaObbcOYWj+29FmAygXa+28yMms2lEhPSmXUYzo5xDUJIIh0lK0IO9IfcczRkaajo+IJTN7U5fS6mLc7SuvNrUjup2Qz9R4OAe1YDDg8j5nzJqXMtdnaMEgjjiWwZezca8HR6xISO6/Od1O+ufp99gyFDpdjU8ji12+WEZMmeiifCU1oU6epGYortWoRRlrTlTNZxqBV3DJbZFwxQQrHd7/KIziY6QqBRhAgiLfAwc4otHc8l4iLOikpzGRhT4JpdwlEPbELeMJRSEb6XP99iPBWdpNnFCA5zHIMn7ZiOvh9GZhmWiIXLvBWfgiLSEEk4/0suf88OvjZ7+XxpFweMWvpQ6fgckVEK4ynrZL1jKoxpqSjeQ2aFLaFRm6ub0l/dSXc3RR6v1kEn6x5dMJPQIpmaMZPxJtWuhE6OsUh6VUe4ayhdsNMR2bMwzTVXJLiTdIS2Z1l6WVSAeRYBvtCIzBoe03LtTOckKhNGOCFOiAlDn18QAgU6wkcmc4ZG+dobiyzFts3Z/Guqkg3MxMIVrY2cRPjyCNbpln/n7mvLhJXYkukag1uIWMjienSi2R1mtmyrAaGwt1uPist64dAxPrcV6SqsksGIaTDvOlrbSYDotGD63KV15HH2HlDTOq3t/F3cfzByV4KLI/0lmxFNsCVtNXjEyDt22RojSkDk4rWW3rUcKb5irlqfnsgv6a701w5lImlrOu468+aoZcv2wvgwJYGb9NDRIqYswlsvI/S9AdNwz/MSVNP2QJpAgQDodVn84xwSEXW+F/H51LOUmtH1leXLa0bfq5+xPP5AZz43XdhaBWLkLuzpgOsCFeGc1XiktnB9HbOocyN4y8U/2fiPkaXMk+S6aqupNi8qOw2L0ARftpMntbCjWtNN+tTH6eJo2k9ZzZ3FVxfycBTD6FRSkz6s41w26bsm4IZNZfTUq3eCxcuq4Pe89ywUET0rwcrWk0dHtq5Mebu+yyYX1mnUaQ9wXcbJtquMAbI4s2OW5zqVvV+Hjjr0F9GbLVckcHn8aH8vE/4kAq2gsagPxh/zjMA10RLjDM7xCGV0VgUd48atZYIybfeojoKoqjPrIhYJVZXFG4cnRtNHzbypqucbz6P+KGFVjcoOXN4gZPFk3bHjSRDz3AULmbaVdk2TfnPLjaectNY5eqBIqNw25tXTJCbRzr91lI3bt2UWuI6lST2qessK15/Ivf5zmaeTD8V11/N6hNZl57TV1eBlWcqyDXpl7zXVQHlCLjPP3abWPRpCOpRkmaf5gDUDt3+ydWfnQnXBszKhHueMjmy9RXNTLuTRMG5muwnNDXioscEbz0I2uK6qDKbFZNkDicaBMo06Ht4SfZVTr/t9ltbcTrYbAdC6bH7SjYOOhYeR50XMig7bTpX5XlJfoclpqqSroUHSJOs+FrkE42dwpgNVAT4lz2dJR1ndk8e95qQJHR9J4Lo9Zda4jIHG7atRi6e1zF3xU84zZXVLp33uNE2em16UcBnFr4lXHeVqrOnyScNpgTqZp+zAlg1qUSePm7KuErYmWraMUbP1lb3fBEdV5rGsnlTIxLrlV0WxapN+zRPgPFpH6yi3ulV1ZnFbnEX15rWzyq2O+SIR4Mni6yoY49SuOuUssVUmeJqNiaOs2vv0ipitrhDlfS96Vrecopqh897NavKi3+1v5Dyv27Zs7FbmruXV61oeyOeROsouj8ay92w71/eHXVydT1+dttWHCe+HyyNiXM1QNuBNcBW5EVX1ZXFYmEaMa2nKJkDq0DINqGNhx6VhXCU0bXDH3Ma3ReWysHEhz5QFbtLgvMzi1BNmsc41aFKX/X0c2ssCbDcNnefybBTkxTJ1l+jVgbLMY1aBVlmvsjpcPFkPwRW2onZl+3/jxmDM7TkWsun3ptqyTmo467rkMXbdVS+zhCYZrbqp7UkXhWfpamKNjhWUTYVkoUgZlyncor7Pm0qqgqLpjmI8M3Apm0CdxrkC5dYz67R7U8gKTnmmbeNg1kpoluMwSVjQFP84Vjc73tXvT0ngJu30Mr+6KN7J66zjSQA3Ok47ljANS+zCRoxlnrWfpM56iZ6GApc1oZN2SlUw7wpSVTC+UYmHrFarymLlpeKzeIqelblSddysvLLTjh/rJJ+a1DOu8nSTUnUSN9MwENnMcPWYTjgPNw2Bq0fosYemTDBuYqAqO1uVha2icxb9WSTQkwjcODBesmy8Ix+bxMXpbzm7BVxNMWsYXZ50/AhXXSij17apSV/WaX/dualxkgDTgGOXARwXpnG+agl257MusnBWU2QzOnmf/3+YjTXO09YTJJQ3DJoseLfQRDAnvxTx2IHOTgvk+aZFbt+kc251A+2NtrpVK1Dy5n2awjgWvUl/l7WhauqiTn9PI0lSR3DqxrvjWvNxpx3q4l0/DhkLlxdQHm/Zv2MF0+yDooRGnfemmQofF6Yxx1gH6jL3uHWM814dwcuLYw3USJpsdAxwvMG0U96Qasy8DGKRFas7wFX1ThPymC/vc5VFL6K/jiWH5uOTN7leVac7ZlVli59PMA+XtYZN45i6nZl1b5vUkcXVJBVfdzqiCH8VrWXZrEmyttnlY037qqn1bZalq4+7qA+K+qhqjIva1SQrWiePkbVulofM5wknvosYrI4WqMsIrvay/nrdJVTj1AfllqauhhuHqTSjWrSp5k4HdjKw/TyOUBSVm8ZCgDxhyT6vE++XKYm6WeDxYIorTfI+TwLTcH/GTeoUtaFJ26Yx5TGd82CmdbXY9w5kXT9Yn+xyfy+zVtPtN7++xs4S4kIdUzsNGEeAxum0Sa1yER15eFzmcNuWFzPUgfXWpL6wTUNZFrWn7rtlVrqOxc26+U1h3DGuZ8GF1kqXuzDulodxs2t1IOvG1anjeyWDmjcYrvvj7nYomjBvMj1SNvh1BJ+a9bj4qnBly+XF5mUxWrbOKuVbd6tO0Xt5dRbhqRK2tF1+OXPrzL+zhDKN3iTpcTxCkwC/qh11XNQyF2maMWgVDlegpoHPxVVVxsVXdRTgNGLeMlrS8fbTF6bR+VVQpQlcoStKyBThPJ4FriimGMfVnaSd9d8d7+INN9Hi0moTXePG0k1Cliql3RTfpDBqsWtsQJ325s68htcRGnc1QZFLkcWzkWs0y7KL2S6ucrcszOJMz7oKatwJ7Gkq53GTXlmoc3ZmUxgvVp3yBtQ6UORGTcttHScOmSbUcRPrMlDdE8/qPmvi2o0L08JdJ5b73oNjIHAu1A2Ss5AX72Wze9nfKfl9mrBRDJJtV5mQ1YljslBmpcdp4zgWa1qWchZezng4KwSurtXJG/BJNGmd4D7P/coTXjfVPG3I4sweHFSUoi5SAlV1lWX4quhzk2N1xmUW/bVRrn1RrN8khBmnXgvFeGtYuLpp2nGYqEorZ/GVBbtVPvUsBrusk7OCPo4L6OJy8dT1DIqEsg5N2bZNGhOWKeRpx31ufXnKdtoCVz/7WyFw4xI0jYbUzVKWvTNtd6LKmozDOHXKry+jtcocCVgVt7nf69QtnEzl93ocNamnZfs57+jDZnXMKIazhE6StBg3s5QX35Hz27i0FQldUca0Kd56mcj0tOAqIbd0NR2TsstBZg2z3GRaFctm63bPSRmHrlG+y5kWyLou4wjONASuCpqcaQmj7kuTVRxlmmwW50bWZa48xhlnnIrcuhldC7UhvNEEmtJTNv2D8yw/zj7GWcq6MK6Pb5dNuVq+Kcxazc8ig7bRMKkQVSWVjlWyJY+uKl4qT2Z9Dwhc9oILaDYARQw9iyzc9zJMoz/Gi2vymXQj5gxt3UV1lSV66uYYRvnPrxcDVCEte68M6gxQNgapk50rwlkUY2UvNKzSXkXf67RnWkxUVXdTHONmdYsSMk3xFjH8rAXOpbkqRKgzdnlTMfbzyPacImZvApNkBovKF2m/aWZQ3Qv+skzT5H67Ogw3rZR0nQRNtq6yfqtK2xc9c9/NKsYiK1BHWdRV2HXaVvZ+0/fKLGERD6RQ4VI23QDZVMsey9il6P7vcbVq9r2mKzu+l2GaymOjof54j27kHS9hNuUYruxeruMZ/iskLmYJ9Sd2J4dJMr+ukpt+FnT9Rt6iREtx/1TsFsjL8NW1cmWJimPB3FXzcHXONiyiv0m7mrh5Y8BY+2ry6C8TsCKhsPxSpnQnVW6TCn6W9qopobpzt/V21dRcaTKt+OlYQtVAH49tGoe5RMNrl4vxNIeylRjTgmkJa926miTnqvHXELhsYHksrdSsYNLge1YwXpq9XNjysoqTWJ08fijqy40MN/KyhbOs39ZR3o/xmSbZF2F0xjwP+bSZchzmmqVwNFUs0xDabJ15SatJNXwR02Xj7zJhrLuxt4h36vZPE1fXLZuXfazyFuooqXF4YRQKjjp3/dppaEGXEPffqj1Xszj1uAlMT6CP3VF1dTS7yPyb/Wzx5P1ehXfaJwY0rT/vs9snTQ5lmorAlSU3LEHTTHGXTSrnaaRjLXTTASHEGPmMacdEeVMXdQVhtP76CiRPmJtAk8SFW2dVfHpsQoecGC4vQTItwo6n9HuTi+3rlCsD049C2P7cyCuX8hSZKHmWLZdv6eonZTZqOiFbbxUcm5Clxm6BkeJTrXxymKRDxl2ZQMF7RSssoLlblTdFUeXW1GXsOlZtWtdR2XqaumR1YteqsagbX5b1Z1k4NR7vzWgD6kbBsaYvz1KVLf3JS6rUHbiqoH5SS5K1fMcSJs1sZr0I+9uxblfjM03ypLyMwSaBorqPp2mJosnSrIUoc9vGgTL804Bj3bfTyPCWLd07dlCw0iRvSqDIrFqBa5L1qQNlGrtKGIveq1vnejwm4VEndTxJP9TFkWWeLL1lsXfenKoLVQkFXbOMzXJnf8uz9u73IrqyNObVWfSsCPKmYZq48Xn4ysuWWLgm2rcqKzQO1PHBp21ZixmwOkkwDXesLg7rMhWVz1rRolikiMmrFMs4bWzi0tX1pKreq1PPNPl2bIGr6hy3A76XU/ZFGqzIVZwkQVOc2p7+HJ17VVYT+F7NRtcVSLd8XuZ29rzcIIYr0oxuuelkcqYHZfVnd5Lnpcizba7bnrz+KMZdLGxlLk0WX95Y5VnAuhq9qK3juuk5T3TRQUVlbcmWc5NVs56CqBr/6jprbM8pGvQ8BpqFwOXFK26s02R1v/s97728OqoEsazevPdhdJqgDp4qxs/LeObFaU1i3DKBK8uy1q1DlRzBVydUyI5R0e4Fcp6N69pm628e0tTcDzeuVs8rU+RalbtdzWiZFcwi2zVpoqcJzA63SSpVWZlZtLVIMdS15E28i8nprTkP18Q3zpbPNrxsudK07uvODvy0YBqJkSzM2g2aLaTL1eowvuuZTLOt2csXoTwhUpQxdfHUycI2b0NmWqAqTVoH8nDg/HY8MZXbcdOmq6jdbv+Uubzud/c3F38R3WXjNu21qVUWP28aoalrWxQ6THthdF3Ic6Pr8dGMjsk7noTqWMGkZzROwkRldU9B2LTDcJUkFhWYBo8YQd74nRjj11UhcOMMjktMXlr6WLtQWbfG7IYwgyYzZaA8DmnyrCmNebizMW5R6j+vHVm66ic3ss81szgGfZy+c8dyEss9TrxXFK+Wu5o1Jr4n6dmsH113kMtiwWlmPVNckx9JMM5ckPMtiYXK6mqeFWsW19TJGNrkSFPIJh+q+rKcBvf3+mM3SXLFLZs3Dm6binm1YANq9qUqZir7vSpFnoUyzZFX1yQxYlYZVCVFyixamULIeza6mj5NPOTRkwd1GCXPmhm8+XNgef2+nob05p4qOqeZuMoyM5l664xNUSxYBGW8VmZIiq11zXm4vMaWlS9zaYoIg2KLOJ7VKH+eV9adDHfLVa1pbIKjLDFSB/8kUMSEzXAIHSsKrUHEG5Rzh2hc+sumi4rw5yUy8qDJ6psmVrFeWxtMfFeV0c4CXzczVYavjruT/mbirHwLaJ7VpbcYRrW3S8O4lrMM6gjdOJDnVeQpN0VzporL2uS21vFP02xDmVCU8VdDGmptwR/ty5TPxoP/D1VFomtrwJTEAAAAAElFTkSuQmCC" alt="ViLink Calculadora">
+    <div class="header-text">
+      <h1>ViLink Calculadora</h1>
+      <p class="subtitle">Gabinetes 0,5 × 1 m · 128 × 256 px · Pitch ≈ 3,91 mm</p>
+    </div>
+  </header>
+
+  <div class="toolbar no-print">
+    <div class="field">
+      <label>Nombre del evento</label>
+      <input type="text" id="eventName" placeholder="Ej: Festival XYZ – Escenario A" oninput="updateEventName()">
+    </div>
+    <button type="button" class="btn secondary" onclick="exportConfig()">Exportar</button>
+    <button type="button" class="btn secondary" onclick="document.getElementById('importFile').click()">Importar</button>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importConfig(event)">
+    <button type="button" class="btn print" onclick="printSummary()">Imprimir resumen</button>
+    <button type="button" class="icon-btn" onclick="openModal('settingsModal')" title="Configuración">⚙ Config</button>
+    <button type="button" class="icon-btn" onclick="openModal('eventsModal')" title="Eventos">📅 Eventos</button>
+    <button type="button" class="icon-btn" onclick="openModal('stockModal')" title="Stock">📦 Stock</button>
+  </div>
+
+  <div class="card">
+    <h2>📐 Configuración de pantallas</h2>
+
+    <div class="mode-toggle">
+      <button type="button" id="modeCabs" class="active" onclick="setMode('cabs')">Por gabinetes</button>
+      <button type="button" id="modeMeters" onclick="setMode('meters')">Por metros</button>
+    </div>
+
+    <div class="screens-list" id="screensList"></div>
+    <button type="button" class="btn secondary" style="width:100%;margin-bottom:10px" onclick="addScreen()">+ Agregar pantalla secundaria</button>
+    <p class="snap-note" id="snapNote"></p>
+    <div class="grid grid-2" style="margin-top:8px">
+      <div>
+        <label>Aparejos por pantalla (vacío = auto)</label>
+        <input type="number" id="motorOverride" value="" min="2" max="30" placeholder="Auto" oninput="calc()">
+      </div>
+    </div>
+    <!-- compat hidden for export/import legacy -->
+    <input type="hidden" id="cols" value="8">
+    <input type="hidden" id="rows" value="4">
+    <input type="hidden" id="widthInput" value="4">
+    <input type="hidden" id="heightInput" value="4">
+    <input type="hidden" id="cabinetType" value="interior">
+  </div>
+
+  <!-- Parámetros (ocultos, se editan en Config) -->
+  <input type="hidden" id="weight" value="14">
+  <input type="hidden" id="power" value="200">
+  <input type="hidden" id="maxPowerChain" value="15">
+  <input type="hidden" id="maxDataPerPort" value="24">
+
+  <div class="section-title">Resultados</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h2>🖥️ Tamaño y resolución</h2>
+      <div class="result-row"><span class="label">Gabinetes totales</span><span class="value" id="totalCabs">—</span></div>
+      <div class="result-row"><span class="label">Columnas × Filas</span><span class="value" id="layout">—</span></div>
+      <div class="result-row"><span class="label">Ancho físico</span><span class="value" id="widthM">—</span></div>
+      <div class="result-row"><span class="label">Alto físico</span><span class="value" id="heightM">—</span></div>
+      <div class="result-row"><span class="label">Área</span><span class="value" id="area">—</span></div>
+      <div class="result-row"><span class="label">Resolución total</span><span class="value big" id="resolution">—</span></div>
+      <div class="result-row"><span class="label">Píxeles totales</span><span class="value" id="totalPixels">—</span></div>
+
+      <div class="view-toggle" style="margin-top:12px; margin-bottom:0">
+        <button type="button" id="viewData" class="active" onclick="setView('data')">Data (red)</button>
+        <button type="button" id="viewPower" class="power" onclick="setView('power')">Power (electricidad)</button>
+      </div>
+      <div class="screen-preview-tabs" id="screenPreviewTabs"></div>
+
+      <div class="preview-wrap">
+        <div class="preview-label" id="previewLabel">Vista · Flechas = dirección · Cables abajo</div>
+        <div class="wall" id="preview"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⚡ Potencia y peso</h2>
+      <div class="result-row"><span class="label">Peso total paneles</span><span class="value" id="totalWeight">—</span></div>
+      <div class="result-row"><span class="label">Peso + 15% (cables/hardware)</span><span class="value warn" id="weightWithHw">—</span></div>
+      <div class="result-row"><span class="label">Potencia máxima</span><span class="value" id="totalPower">—</span></div>
+      <div class="result-row"><span class="label">Corriente aprox.</span><span class="value" id="current">—</span></div>
+      <div class="result-row"><span class="label">Circuitos recomendados (80%)</span><span class="value" id="circuits">—</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2 id="connTitle">🔌 Data · Cables · Hot-Backup</h2>
+
+    <div class="grid grid-2">
+      <div id="dataStats">
+        <div class="result-row"><span class="label">Puertos data necesarios</span><span class="value big" id="dataPorts">—</span></div>
+        <div class="result-row"><span class="label">Cables data desde procesador</span><span class="value" id="dataFromProc">—</span></div>
+        <div class="result-row"><span class="label">Cables data hot-backup</span><span class="value" id="dataBackup">—</span></div>
+        <div class="result-row"><span class="label">Cables data entre gabinetes</span><span class="value" id="dataInter">—</span></div>
+      </div>
+      <div id="powerStats">
+        <div class="result-row"><span class="label">Cadenas de power</span><span class="value big" id="powerChains">—</span></div>
+        <div class="result-row"><span class="label">Cables power desde distro</span><span class="value" id="powerFromDistro">—</span></div>
+        <div class="result-row"><span class="label">Cables power entre gabinetes</span><span class="value" id="powerInter">—</span></div>
+        <div class="result-row"><span class="label">Máx. por cadena</span><span class="value" id="powerMaxLabel">15</span></div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:8px">
+      <div>
+        <div class="result-row"><span class="label">Uniones (locks) horizontales</span><span class="value" id="locksH">—</span></div>
+        <div class="result-row"><span class="label">Uniones (locks) verticales</span><span class="value" id="locksV">—</span></div>
+        <div class="result-row"><span class="label">Total de locks</span><span class="value" id="locksTotal">—</span></div>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="bottom-note" id="bottomNote">
+      ✓ <strong>IN y OUT en la fila inferior</strong> · Flechas indican el sentido · Cadenas repartidas de forma equitativa
+    </div>
+
+    <div class="flow-box" id="flowBox"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>🏗️ Truss · Bumpers · Lingas</h2>
+    <div id="riggingResults"></div>
+  </div>
+
+  
+  
+  <!-- Modal Configuración -->
+  <div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeModal('settingsModal')">
+    <div class="modal">
+      <h2>⚙ Configuración</h2>
+      <div class="grid grid-2">
+        <div>
+          <label>Peso por gabinete (kg)</label>
+          <input type="number" id="cfg_weight" value="14" min="5" max="30" step="0.5">
+        </div>
+        <div>
+          <label>Potencia máx. por gabinete (W)</label>
+          <input type="number" id="cfg_power" value="200" min="50" max="500" step="10">
+        </div>
+        <div>
+          <label>Máx. gabinetes por cadena de power</label>
+          <input type="number" id="cfg_maxPowerChain" value="15" min="2" max="20">
+        </div>
+        <div>
+          <label>Máx. gabinetes por puerto data</label>
+          <select id="cfg_maxDataPerPort">
+            <option value="20">20 gabinetes</option>
+            <option value="24" selected>24 gabinetes</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:10px">Voltaje fijo 220 V · Montaje siempre truss · 2 lingas por bumper · Bumpers de 1 m</p>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" onclick="resetSettings()">Restaurar defaults</button>
+        <button type="button" class="btn secondary" onclick="closeModal('settingsModal')">Cancelar</button>
+        <button type="button" class="btn" onclick="saveSettings()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal Eventos -->
+  <div class="modal-overlay" id="eventsModal" onclick="if(event.target===this)closeModal('eventsModal')">
+    <div class="modal" style="max-width:640px">
+      <h2>📅 Eventos</h2>
+      <p class="hint" style="margin-bottom:10px">Guardá armados activos para reservar stock. Los eventos activos descuentan del inventario disponible.</p>
+      <div class="modal-actions" style="justify-content:flex-start;margin-top:0;margin-bottom:12px">
+        <button type="button" class="btn" onclick="saveCurrentAsEvent()">Guardar armado actual</button>
+        <button type="button" class="btn secondary" onclick="document.getElementById('importEventFile').click()">Importar evento</button>
+        <input type="file" id="importEventFile" accept=".json,application/json" style="display:none" onchange="importEventFile(event)">
+      </div>
+      <div class="events-list" id="eventsList"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" onclick="closeModal('eventsModal')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Stock -->
+  <div class="modal-overlay" id="stockModal" onclick="if(event.target===this)closeModal('stockModal')">
+    <div class="modal">
+      <h2>📦 Stock disponible</h2>
+      <div class="stock-grid">
+        <label>Gabinetes interior</label>
+        <input type="number" id="stk_cabinetsInt" value="0" min="0">
+        <label>Gabinetes exterior</label>
+        <input type="number" id="stk_cabinetsExt" value="0" min="0">
+        <label>Bumpers 1 m</label>
+        <input type="number" id="stk_bumpers" value="0" min="0">
+        <label>Lingas</label>
+        <input type="number" id="stk_lingas" value="0" min="0">
+        <label>Aparejos 1 t</label>
+        <input type="number" id="stk_motors" value="0" min="0">
+        <label>Cables data</label>
+        <input type="number" id="stk_dataCables" value="0" min="0">
+        <label>Cables power</label>
+        <input type="number" id="stk_powerCables" value="0" min="0">
+      </div>
+
+      <div class="stock-section">
+        <h3>Truss por sección</h3>
+        <div class="truss-type-block">
+          <div class="type-title">24 × 24 cm</div>
+          <div class="truss-lens">
+            <div><label>3 m</label><input type="number" id="stk_t24_3" value="0" min="0"></div>
+            <div><label>2 m</label><input type="number" id="stk_t24_2" value="0" min="0"></div>
+            <div><label>1 m</label><input type="number" id="stk_t24_1" value="0" min="0"></div>
+          </div>
+        </div>
+        <div class="truss-type-block">
+          <div class="type-title">30 × 30 cm</div>
+          <div class="truss-lens">
+            <div><label>3 m</label><input type="number" id="stk_t30_3" value="0" min="0"></div>
+            <div><label>2 m</label><input type="number" id="stk_t30_2" value="0" min="0"></div>
+            <div><label>1 m</label><input type="number" id="stk_t30_1" value="0" min="0"></div>
+          </div>
+        </div>
+        <div class="truss-type-block">
+          <div class="type-title">40 × 40 cm</div>
+          <div class="truss-lens">
+            <div><label>3 m</label><input type="number" id="stk_t40_3" value="0" min="0"></div>
+            <div><label>2 m</label><input type="number" id="stk_t40_2" value="0" min="0"></div>
+            <div><label>1 m</label><input type="number" id="stk_t40_1" value="0" min="0"></div>
+          </div>
+        </div>
+        <div class="truss-type-block">
+          <div class="type-title">30 × 40 cm</div>
+          <div class="truss-lens">
+            <div><label>3 m</label><input type="number" id="stk_t3040_3" value="0" min="0"></div>
+            <div><label>2 m</label><input type="number" id="stk_t3040_2" value="0" min="0"></div>
+            <div><label>1 m</label><input type="number" id="stk_t3040_1" value="0" min="0"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="stockCompare" class="stock-status ok" style="display:none"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" onclick="closeModal('stockModal')">Cerrar</button>
+        <button type="button" class="btn" onclick="saveStock()">Guardar stock</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="printSummary"></div>
+
+  <footer></footer>
+
+  <script>
+    const CAB_W = 0.5, CAB_H = 1.0, PX_W = 128, PX_H = 256;
+    const DATA_COLORS = [
+      '#3b82f6','#22c55e','#f59e0b','#ec4899',
+      '#8b5cf6','#06b6d4','#ef4444','#84cc16',
+      '#f97316','#14b8a6','#a855f7','#eab308'
+    ];
+    const POWER_COLORS = [
+      '#d97706','#b45309','#f59e0b','#ca8a04',
+      '#a16207','#eab308','#fbbf24','#92400e',
+      '#78350f','#fcd34d','#d97706','#b45309'
+    ];
+
+    let mode = 'cabs';
+    let view = 'data'; // 'data' | 'power'
+
+    // Guardamos resultados de data y power para poder cambiar de vista sin recalcular todo
+    let lastData = null;
+    let lastPower = null;
+    let lastMeta = null;
+    let lastRigging = null;
+    let lastScreensCalc = []; // resultados por pantalla
+    let previewScreenIdx = 0;
+
+    let screens = [
+      { id: 'sc1', name: 'Principal', cols: 8, rows: 4, widthM: 4, heightM: 4, cabinetType: 'interior' }
+    ];
+
+    function addScreen() {
+      const n = screens.length + 1;
+      screens.push({
+        id: 'sc' + Date.now().toString(36),
+        name: 'Secundaria ' + (n - 1),
+        cols: 4, rows: 3, widthM: 2, heightM: 3, cabinetType: 'interior'
+      });
+      renderScreensUI();
+      calc();
+    }
+    function removeScreen(id) {
+      if (screens.length <= 1) return;
+      screens = screens.filter(s => s.id !== id);
+      if (previewScreenIdx >= screens.length) previewScreenIdx = 0;
+      renderScreensUI();
+      calc();
+    }
+    function updateScreenField(id, field, value) {
+      const s = screens.find(x => x.id === id);
+      if (!s) return;
+      if (field === 'name' || field === 'cabinetType') s[field] = value;
+      else s[field] = parseFloat(value) || 0;
+      // sync legacy hidden from first screen
+      syncLegacyFromScreens();
+      calc();
+    }
+    function syncLegacyFromScreens() {
+      const p = screens[0];
+      if (!p) return;
+      document.getElementById('cols').value = p.cols;
+      document.getElementById('rows').value = p.rows;
+      document.getElementById('widthInput').value = p.widthM;
+      document.getElementById('heightInput').value = p.heightM;
+      document.getElementById('cabinetType').value = p.cabinetType;
+    }
+    function renderScreensUI() {
+      const box = document.getElementById('screensList');
+      if (!box) return;
+      const byCabs = mode === 'cabs';
+      box.innerHTML = screens.map((s, i) => {
+        const canRemove = screens.length > 1;
+        return `<div class="screen-card${i===0?' primary':''}">
+          <div class="sc-head">
+            <input type="text" value="${escapeHtml(s.name)}" onchange="updateScreenField('${s.id}','name',this.value)" placeholder="Nombre">
+            ${canRemove ? `<button type="button" class="sc-remove" onclick="removeScreen('${s.id}')">Quitar</button>` : ''}
+          </div>
+          <div class="grid grid-3">
+            <div>
+              <label>Tipo</label>
+              <select onchange="updateScreenField('${s.id}','cabinetType',this.value)">
+                <option value="interior"${s.cabinetType==='interior'?' selected':''}>Interior</option>
+                <option value="exterior"${s.cabinetType==='exterior'?' selected':''}>Exterior</option>
+              </select>
+            </div>
+            ${byCabs ? `
+            <div><label>Columnas</label><input type="number" min="1" max="60" value="${s.cols}" oninput="updateScreenField('${s.id}','cols',this.value)"></div>
+            <div><label>Filas</label><input type="number" min="1" max="20" value="${s.rows}" oninput="updateScreenField('${s.id}','rows',this.value)"></div>
+            ` : `
+            <div><label>Ancho (m)</label><input type="number" min="0.5" max="30" step="0.1" value="${s.widthM}" oninput="updateScreenField('${s.id}','widthM',this.value)"></div>
+            <div><label>Alto (m)</label><input type="number" min="1" max="20" step="0.1" value="${s.heightM}" oninput="updateScreenField('${s.id}','heightM',this.value)"></div>
+            `}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    const LS_SETTINGS = 'vilink_calc_settings';
+    const LS_STOCK = 'vilink_calc_stock';
+    const LS_EVENTS = 'vilink_calc_events';
+    const DEFAULT_SETTINGS = { weight: 14, power: 200, maxPowerChain: 15, maxDataPerPort: 24 };
+    const TRUSS_TYPES = ['24', '30', '40', '3040'];
+    const TRUSS_LABELS = { '24': '24×24', '30': '30×30', '40': '40×40', '3040': '30×40' };
+    const DEFAULT_STOCK = {
+      cabinetsInt: 0, cabinetsExt: 0, bumpers: 0, lingas: 0, motors: 0,
+      dataCables: 0, powerCables: 0,
+      t24_3: 0, t24_2: 0, t24_1: 0,
+      t30_3: 0, t30_2: 0, t30_1: 0,
+      t40_3: 0, t40_2: 0, t40_1: 0,
+      t3040_3: 0, t3040_2: 0, t3040_1: 0
+    };
+
+    function openModal(id) {
+      if (id === 'settingsModal') loadSettingsIntoForm();
+      if (id === 'stockModal') { loadStockIntoForm(); updateStockCompare(); }
+      if (id === 'eventsModal') renderEventsList();
+      document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function loadSettingsIntoForm() {
+      let s = DEFAULT_SETTINGS;
+      try { s = { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}') }; } catch(e) {}
+      document.getElementById('cfg_weight').value = s.weight;
+      document.getElementById('cfg_power').value = s.power;
+      document.getElementById('cfg_maxPowerChain').value = s.maxPowerChain;
+      document.getElementById('cfg_maxDataPerPort').value = s.maxDataPerPort;
+    }
+    function applySettings(s) {
+      document.getElementById('weight').value = s.weight;
+      document.getElementById('power').value = s.power;
+      document.getElementById('maxPowerChain').value = s.maxPowerChain;
+      document.getElementById('maxDataPerPort').value = s.maxDataPerPort;
+    }
+    function saveSettings() {
+      const s = {
+        weight: parseFloat(document.getElementById('cfg_weight').value) || 14,
+        power: parseFloat(document.getElementById('cfg_power').value) || 200,
+        maxPowerChain: parseInt(document.getElementById('cfg_maxPowerChain').value) || 15,
+        maxDataPerPort: parseInt(document.getElementById('cfg_maxDataPerPort').value) || 24
+      };
+      localStorage.setItem(LS_SETTINGS, JSON.stringify(s));
+      applySettings(s);
+      closeModal('settingsModal');
+      calc();
+    }
+    function resetSettings() {
+      localStorage.setItem(LS_SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
+      loadSettingsIntoForm();
+      applySettings(DEFAULT_SETTINGS);
+      calc();
+    }
+
+    function loadStockIntoForm() {
+      let st = DEFAULT_STOCK;
+      try { st = { ...DEFAULT_STOCK, ...JSON.parse(localStorage.getItem(LS_STOCK) || '{}') }; } catch(e) {}
+      // migrar stock viejo
+      const cabInt = st.cabinetsInt != null ? st.cabinetsInt : (st.cabinets || 0);
+      const cabExt = st.cabinetsExt != null ? st.cabinetsExt : 0;
+      document.getElementById('stk_cabinetsInt').value = cabInt;
+      document.getElementById('stk_cabinetsExt').value = cabExt;
+      document.getElementById('stk_bumpers').value = st.bumpers;
+      document.getElementById('stk_lingas').value = st.lingas;
+      document.getElementById('stk_motors').value = st.motors;
+      document.getElementById('stk_dataCables').value = st.dataCables;
+      document.getElementById('stk_powerCables').value = st.powerCables;
+      ['24','30','40','3040'].forEach(t => {
+        [3,2,1].forEach(L => {
+          const id = 'stk_t' + t + '_' + L;
+          const key = 't' + t + '_' + L;
+          const el = document.getElementById(id);
+          if (el) el.value = st[key] || 0;
+        });
+      });
+    }
+    function getStock() {
+      let st = DEFAULT_STOCK;
+      try { st = { ...DEFAULT_STOCK, ...JSON.parse(localStorage.getItem(LS_STOCK) || '{}') }; } catch(e) {}
+      return st;
+    }
+    function saveStock() {
+      const st = {
+        cabinetsInt: parseInt(document.getElementById('stk_cabinetsInt').value) || 0,
+        cabinetsExt: parseInt(document.getElementById('stk_cabinetsExt').value) || 0,
+        bumpers: parseInt(document.getElementById('stk_bumpers').value) || 0,
+        lingas: parseInt(document.getElementById('stk_lingas').value) || 0,
+        motors: parseInt(document.getElementById('stk_motors').value) || 0,
+        dataCables: parseInt(document.getElementById('stk_dataCables').value) || 0,
+        powerCables: parseInt(document.getElementById('stk_powerCables').value) || 0
+      };
+      ['24','30','40','3040'].forEach(t => {
+        [3,2,1].forEach(L => {
+          const el = document.getElementById('stk_t' + t + '_' + L);
+          st['t' + t + '_' + L] = el ? (parseInt(el.value) || 0) : 0;
+        });
+      });
+      localStorage.setItem(LS_STOCK, JSON.stringify(st));
+      updateStockCompare();
+      closeModal('stockModal');
+    }
+    function updateStockCompare() {
+      const el = document.getElementById('stockCompare');
+      if (!el || !lastMeta) { if (el) el.style.display = 'none'; return; }
+      const st = getStock();
+      const reserved = getActiveEventsReserved();
+      const free = (key) => (st[key] || 0) - (reserved[key] || 0);
+      let needInt = 0, needExt = 0;
+      (lastScreensCalc || []).forEach(s => {
+        if (s.cabinetType === 'exterior') needExt += s.totalCabs;
+        else needInt += s.totalCabs;
+      });
+      const need = {
+        bumpers: lastRigging ? lastRigging.bumpers : 0,
+        lingas: lastRigging ? lastRigging.lingas : 0,
+        motors: lastRigging ? lastRigging.motors : 0
+      };
+      const lines = [];
+      let worst = 'ok';
+      const check = (label, have, req) => {
+        if (req <= 0) return;
+        if (have >= req) lines.push(`✓ ${label}: ${have} libres / ${req} nec.`);
+        else {
+          lines.push(`✗ ${label}: ${have} libres / ${req} nec. (faltan ${req - have})`);
+          worst = 'bad';
+        }
+      };
+      check('Gabinetes interior', free('cabinetsInt'), needInt);
+      check('Gabinetes exterior', free('cabinetsExt'), needExt);
+      check('Bumpers', free('bumpers'), need.bumpers);
+      check('Lingas', free('lingas'), need.lingas);
+      check('Aparejos', free('motors'), need.motors);
+      if (lastRigging && lastRigging.trussType && lastRigging.pieces) {
+        const tt = String(lastRigging.trussType);
+        const label = TRUSS_LABELS[tt] || tt;
+        const p = lastRigging.pieces;
+        check('Truss ' + label + ' · 3 m', free('t' + tt + '_3'), p.n3);
+        check('Truss ' + label + ' · 2 m', free('t' + tt + '_2'), p.n2);
+        check('Truss ' + label + ' · 1 m', free('t' + tt + '_1'), p.n1);
+      }
+      const activeN = getEvents().filter(e => e.active).length;
+      if (activeN) lines.unshift(`${activeN} evento(s) activo(s) reservando stock`);
+      if (!lines.length) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      el.className = 'stock-status ' + worst;
+      el.innerHTML = '<strong>Stock libre vs. este armado</strong><br>' + lines.join('<br>');
+    }
+
+    function getEvents() {
+      try { return JSON.parse(localStorage.getItem(LS_EVENTS) || '[]'); } catch(e) { return []; }
+    }
+    function setEvents(list) {
+      localStorage.setItem(LS_EVENTS, JSON.stringify(list));
+    }
+    function uid() {
+      return 'ev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    }
+    function snapshotNeeds() {
+      if (!lastMeta) return null;
+      const r = lastRigging;
+      // gabinetes por tipo sumando pantallas
+      let cabInt = 0, cabExt = 0;
+      (lastScreensCalc || []).forEach(s => {
+        if (s.cabinetType === 'exterior') cabExt += s.totalCabs;
+        else cabInt += s.totalCabs;
+      });
+      return {
+        cabinetType: lastMeta.cabinetType || 'interior',
+        cabinetsInt: cabInt,
+        cabinetsExt: cabExt,
+        totalCabs: lastMeta.totalCabs,
+        cols: lastMeta.cols,
+        rows: lastMeta.rows,
+        widthM: lastMeta.widthM,
+        heightM: lastMeta.heightM,
+        resW: lastMeta.resW,
+        resH: lastMeta.resH,
+        screenCount: lastMeta.screenCount || 1,
+        screens: lastMeta.screens || [],
+        bumpers: r ? r.bumpers : 0,
+        lingas: r ? r.lingas : 0,
+        motors: r ? r.motors : 0,
+        trussType: r ? r.trussType : null,
+        pieces: r && r.pieces ? { ...r.pieces } : { n3: 0, n2: 0, n1: 0 },
+        perScreenRigging: r && r.perScreen ? r.perScreen : []
+      };
+    }
+    function getActiveEventsReserved() {
+      const acc = {
+        cabinetsInt: 0, cabinetsExt: 0, bumpers: 0, lingas: 0, motors: 0
+      };
+      TRUSS_TYPES.forEach(t => { [3,2,1].forEach(L => { acc['t'+t+'_'+L] = 0; }); });
+      getEvents().filter(e => e.active && e.need).forEach(e => {
+        const n = e.need;
+        if (n.cabinetsInt != null || n.cabinetsExt != null) {
+          acc.cabinetsInt += n.cabinetsInt || 0;
+          acc.cabinetsExt += n.cabinetsExt || 0;
+        } else if ((n.cabinetType || 'interior') === 'exterior') acc.cabinetsExt += n.totalCabs || 0;
+        else acc.cabinetsInt += n.totalCabs || 0;
+        acc.bumpers += n.bumpers || 0;
+        acc.lingas += n.lingas || 0;
+        acc.motors += n.motors || 0;
+        if (n.trussType && n.pieces) {
+          const tt = String(n.trussType);
+          acc['t'+tt+'_3'] = (acc['t'+tt+'_3']||0) + (n.pieces.n3||0);
+          acc['t'+tt+'_2'] = (acc['t'+tt+'_2']||0) + (n.pieces.n2||0);
+          acc['t'+tt+'_1'] = (acc['t'+tt+'_1']||0) + (n.pieces.n1||0);
+        }
+      });
+      return acc;
+    }
+    function saveCurrentAsEvent() {
+      calc();
+      const need = snapshotNeeds();
+      if (!need) { alert('No hay armado para guardar'); return; }
+      const name = (document.getElementById('eventName').value || '').trim() || ('Evento ' + new Date().toLocaleDateString('es-AR'));
+      const list = getEvents();
+      list.unshift({
+        id: uid(),
+        name,
+        active: true,
+        savedAt: new Date().toISOString(),
+        need
+      });
+      setEvents(list);
+      document.getElementById('eventName').value = name;
+      renderEventsList();
+      updateStockCompare();
+    }
+    function importEventFile(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const cfg = JSON.parse(reader.result);
+          const need = cfg.need || (cfg.results ? {
+            cabinetType: cfg.cabinetType || 'interior',
+            totalCabs: cfg.results.totalCabs,
+            cols: cfg.cols, rows: cfg.rows,
+            widthM: cfg.results.widthM, heightM: cfg.results.heightM,
+            resW: cfg.results.resW, resH: cfg.results.resH,
+            bumpers: cfg.rigging ? cfg.rigging.bumpers : 0,
+            lingas: cfg.rigging ? cfg.rigging.lingas : 0,
+            motors: cfg.rigging ? cfg.rigging.motors : 0,
+            trussType: cfg.rigging ? cfg.rigging.trussType : null,
+            pieces: cfg.rigging && cfg.rigging.pieces ? cfg.rigging.pieces : { n3:0,n2:0,n1:0 }
+          } : null);
+          if (!need || !need.totalCabs) throw new Error('sin datos');
+          const list = getEvents();
+          list.unshift({
+            id: uid(),
+            name: cfg.eventName || file.name.replace(/\.json$/i,'') || 'Importado',
+            active: true,
+            savedAt: new Date().toISOString(),
+            need
+          });
+          setEvents(list);
+          renderEventsList();
+          updateStockCompare();
+        } catch (e) {
+          alert('No se pudo importar el evento.');
+        }
+        ev.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+    function toggleEventActive(id) {
+      const list = getEvents().map(e => e.id === id ? { ...e, active: !e.active } : e);
+      setEvents(list);
+      renderEventsList();
+      updateStockCompare();
+    }
+    function deleteEvent(id) {
+      if (!confirm('¿Eliminar este evento?')) return;
+      setEvents(getEvents().filter(e => e.id !== id));
+      renderEventsList();
+      updateStockCompare();
+    }
+    function loadEventToCalc(id) {
+      const e = getEvents().find(x => x.id === id);
+      if (!e || !e.need) return;
+      const n = e.need;
+      document.getElementById('eventName').value = e.name || '';
+      if (n.screens && n.screens.length) {
+        screens = n.screens.map((s, i) => ({
+          id: s.id || ('sc' + i),
+          name: s.name || (i === 0 ? 'Principal' : 'Secundaria ' + i),
+          cols: s.cols || 4,
+          rows: s.rows || 3,
+          widthM: s.widthM || (s.cols || 4) * 0.5,
+          heightM: s.heightM || (s.rows || 3),
+          cabinetType: s.cabinetType || 'interior'
+        }));
+      } else {
+        screens = [{
+          id: 'sc1', name: 'Principal',
+          cols: n.cols || 8, rows: n.rows || 4,
+          widthM: n.widthM || 4, heightM: n.heightM || 4,
+          cabinetType: n.cabinetType || 'interior'
+        }];
+      }
+      setMode('cabs');
+      renderScreensUI();
+      calc();
+      closeModal('eventsModal');
+    }
+    function renderEventsList() {
+      const box = document.getElementById('eventsList');
+      if (!box) return;
+      const list = getEvents();
+      if (!list.length) {
+        box.innerHTML = '<p class="hint">No hay eventos guardados. Calculá un armado y pulsá «Guardar armado actual».</p>';
+        return;
+      }
+      box.innerHTML = list.map(e => {
+        const n = e.need || {};
+        const tipo = n.cabinetType === 'exterior' ? 'Exterior' : 'Interior';
+        const fecha = e.savedAt ? new Date(e.savedAt).toLocaleString('es-AR') : '';
+        return `<div class="event-card${e.active ? ' active-ev' : ''}">
+          <div class="ev-top">
+            <div>
+              <span class="ev-name">${escapeHtml(e.name)}</span>
+              ${e.active ? '<span class="badge green">Activo</span>' : '<span class="badge">Inactivo</span>'}
+            </div>
+          </div>
+          <div class="ev-meta">
+            ${n.cols||'?'}×${n.rows||'?'} · ${n.totalCabs||0} gab. ${tipo}
+            ${n.trussType ? ' · Truss '+(TRUSS_LABELS[n.trussType]||n.trussType) : ''}
+            ${n.motors ? ' · '+n.motors+' aparejos' : ''}<br>${fecha}
+          </div>
+          <div class="ev-actions">
+            <button type="button" class="${e.active?'on':''}" onclick="toggleEventActive('${e.id}')">${e.active?'Desactivar':'Activar'}</button>
+            <button type="button" onclick="loadEventToCalc('${e.id}')">Cargar</button>
+            <button type="button" class="danger" onclick="deleteEvent('${e.id}')">Eliminar</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    function escapeHtml(s) {
+      return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function initStorage() {
+      let s = DEFAULT_SETTINGS;
+      try { s = { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}') }; } catch(e) {}
+      applySettings(s);
+    }
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('modeCabs').classList.toggle('active', m === 'cabs');
+      document.getElementById('modeMeters').classList.toggle('active', m === 'meters');
+      renderScreensUI();
+      calc();
+    }
+
+    function setView(v) {
+      view = v;
+      document.getElementById('viewData').classList.toggle('active', v === 'data');
+      document.getElementById('viewPower').classList.toggle('active', v === 'power');
+      document.getElementById('viewPower').classList.toggle('power', v === 'power');
+      renderPreview();
+      renderFlow();
+    }
+
+    function shade(hex, percent) {
+      const num = parseInt(hex.replace('#',''), 16);
+      const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+      const g = Math.min(255, Math.max(0, ((num >> 8) & 0xFF) + percent));
+      const b = Math.min(255, Math.max(0, (num & 0xFF) + percent));
+      return '#' + (0x1000000 + (r<<16) + (g<<8) + b).toString(16).slice(1);
+    }
+
+    function buildSerpentinePath(cols, rows) {
+      const path = [];
+      let goingUp = true;
+      for (let c = 0; c < cols; c++) {
+        if (goingUp) {
+          for (let r = rows - 1; r >= 0; r--) path.push({ r, c });
+        } else {
+          for (let r = 0; r < rows; r++) path.push({ r, c });
+        }
+        goingUp = !goingUp;
+      }
+      return path;
+    }
+
+    function buildVerticalPath(cols, rows) {
+      const path = [];
+      for (let c = 0; c < cols; c++) {
+        for (let r = rows - 1; r >= 0; r--) path.push({ r, c });
+      }
+      return path;
+    }
+
+    // maxPer = límite preferido (ej. 15)
+    // softMax = límite flexible para división limpia (ej. 16). Si null, = maxPer
+    function splitEquitable(path, maxPer, rows, softMax) {
+      const total = path.length;
+      const soft = softMax || maxPer;
+      let num = Math.ceil(total / maxPer);
+      const base = Math.floor(total / num);
+      const extra = total % num;
+      const targets = [];
+      for (let i = 0; i < num; i++) targets.push(i < extra ? base + 1 : base);
+
+      const chains = [];
+      let idx = 0;
+      for (let p = 0; p < num; p++) {
+        let end = Math.min(idx + targets[p], total);
+        // Ajuste suave al final de cadena: solo ±1 para buscar fila inferior, sin desbalancear
+        if (end < total && p < num - 1) {
+          const candUp = end;
+          const candDn = end - 2;
+          if (candUp < total && (candUp - idx) <= soft && path[candUp - 1] && path[candUp - 1].r === rows - 1
+              && Math.abs((candUp - idx) - targets[p]) <= 1) {
+            end = candUp;
+          } else if (candDn >= idx && path[candDn] && path[candDn].r === rows - 1
+              && Math.abs((candDn + 1 - idx) - targets[p]) <= 1) {
+            end = candDn + 1;
+          }
+        }
+        chains.push(path.slice(idx, end));
+        idx = end;
+      }
+      if (idx < total) chains[chains.length - 1] = chains[chains.length - 1].concat(path.slice(idx));
+      return chains;
+    }
+
+    // Power: tamaños lo más parejos posible (difieren a lo sumo en 1), techo maxPer (o 16 si todas quedan iguales)
+    function splitPowerEven(path, maxPer, rows) {
+      const total = path.length;
+      const soft = Math.max(maxPer, 16);
+
+      // Probar con techo soft solo si el reparto queda perfectamente pareja
+      let num = Math.ceil(total / maxPer);
+      const numSoft = Math.ceil(total / soft);
+      if (numSoft < num) {
+        const sizeSoft = total / numSoft;
+        // Solo aceptar menos cadenas si cada una ≤ soft y el reparto es pareja (diff ≤ 1)
+        if (sizeSoft <= soft && (total % numSoft === 0 || Math.floor(sizeSoft) === Math.ceil(sizeSoft) - 0 || true)) {
+          const b = Math.floor(total / numSoft);
+          const e = total % numSoft;
+          const maxSz = e > 0 ? b + 1 : b;
+          if (maxSz <= soft && (maxSz - b) <= 1) num = numSoft;
+        }
+      }
+
+      // Forzar tamaños pareja: base o base+1
+      const base = Math.floor(total / num);
+      const extra = total % num;
+      const targets = [];
+      for (let i = 0; i < num; i++) targets.push(i < extra ? base + 1 : base);
+
+      // Si alguna supera soft, subir número de cadenas
+      while (Math.max(...targets) > soft) {
+        num++;
+        const b = Math.floor(total / num);
+        const e = total % num;
+        targets.length = 0;
+        for (let i = 0; i < num; i++) targets.push(i < e ? b + 1 : b);
+      }
+
+      const chains = [];
+      let idx = 0;
+      for (let p = 0; p < num; p++) {
+        const end = Math.min(idx + targets[p], total);
+        chains.push(path.slice(idx, end));
+        idx = end;
+      }
+      if (idx < total) chains[chains.length - 1] = chains[chains.length - 1].concat(path.slice(idx));
+      return chains;
+    }
+
+    function getArrow(curr, next) {
+      if (!next) return '';
+      if (next.r < curr.r) return '↑';
+      if (next.r > curr.r) return '↓';
+      if (next.c > curr.c) return '→';
+      if (next.c < curr.c) return '←';
+      return '';
+    }
+
+    // Empaqueta longitud necesaria con piezas 3m, 2m, 1m (mínimo piezas, prioriza 3m)
+    function packTruss(needed) {
+      // Redondear hacia arriba a 0.5 m mínimo de resolución práctica
+      let rem = Math.ceil(needed * 2) / 2; // múltiplos de 0.5
+      if (rem < needed) rem = Math.ceil(needed);
+      // Preferimos enteros de metros
+      rem = Math.ceil(needed);
+
+      let n3 = Math.floor(rem / 3);
+      rem = rem - n3 * 3;
+      let n2 = Math.floor(rem / 2);
+      rem = rem - n2 * 2;
+      let n1 = rem; // 0 o 1
+
+      // Si quedó 1m y hay un 2m, a veces 3 es mejor... pero 1+2=3 ya cubierto.
+      // Si needed no es entero, ya redondeamos arriba.
+      return { n3, n2, n1 };
+    }
+
+    // Orden de piezas de izq a der (alternar tamaños para centrar uniones si se quiere)
+    function buildTrussLayout(pieces) {
+      const segs = [];
+      for (let i = 0; i < pieces.n3; i++) segs.push(3);
+      for (let i = 0; i < pieces.n2; i++) segs.push(2);
+      for (let i = 0; i < pieces.n1; i++) segs.push(1);
+      // Ordenar de mayor a menor suele ser práctico; opcionalmente centrar
+      return segs;
+    }
+
+    function buildChainMaps(chainPaths, rows, cols) {
+      const chainId = Array.from({ length: rows }, () => Array(cols).fill(-1));
+      const arrowMap = Array.from({ length: rows }, () => Array(cols).fill(''));
+      const chainInfo = [];
+      chainPaths.forEach((path, p) => {
+        path.forEach((cell, idx) => {
+          chainId[cell.r][cell.c] = p;
+          arrowMap[cell.r][cell.c] = getArrow(cell, path[idx + 1]);
+        });
+        chainInfo.push({
+          id: p,
+          count: path.length,
+          in: path[0],
+          out: path[path.length - 1],
+          path
+        });
+      });
+      return { chainId, arrowMap, chainInfo, num: chainPaths.length };
+    }
+
+    function calcOneScreen(sc, weight, powerW, maxPower, maxData, motorOverride) {
+      let cols, rows;
+      if (mode === 'cabs') {
+        cols = Math.max(1, parseInt(sc.cols) || 1);
+        rows = Math.max(1, parseInt(sc.rows) || 1);
+      } else {
+        const wDesired = parseFloat(sc.widthM) || 0.5;
+        const hDesired = parseFloat(sc.heightM) || 1;
+        cols = Math.max(1, Math.round(wDesired / CAB_W));
+        rows = Math.max(1, Math.round(hDesired / CAB_H));
+      }
+      sc.cols = cols; sc.rows = rows;
+      sc.widthM = cols * CAB_W;
+      sc.heightM = rows * CAB_H;
+
+      const totalCabs = cols * rows;
+      const widthM = cols * CAB_W;
+      const heightM = rows * CAB_H;
+      const area = widthM * heightM;
+      const resW = cols * PX_W;
+      const resH = rows * PX_H;
+      const totalPx = resW * resH;
+
+      const fullPath = buildSerpentinePath(cols, rows);
+      const dataPaths = splitEquitable(fullPath, maxData, rows, maxData);
+      const dataMaps = buildChainMaps(dataPaths, rows, cols);
+      const powerPaths = splitPowerEven(fullPath, maxPower, rows);
+      const powerMaps = buildChainMaps(powerPaths, rows, cols);
+
+      const totalW = totalCabs * weight;
+      const totalWHw = totalW * 1.15;
+      const totalP = totalCabs * powerW;
+
+      // Rigging per screen
+      const CAP_24 = 100, CAP_30 = 200;
+      const ledLoad = totalWHw;
+      const sameWidth = ledLoad <= 1000;
+      const overhang = sameWidth ? 0 : 0.4;
+      const neededLen = widthM + overhang;
+      const pieces = packTruss(neededLen);
+      const actualLen = pieces.n3 * 3 + pieces.n2 * 2 + pieces.n1 * 1;
+      const layout = buildTrussLayout(pieces);
+      const bumpers = Math.ceil(cols / 2);
+      const lingas = bumpers * 2;
+
+      let trussType = '24';
+      let capPerM = CAP_24;
+      if (ledLoad / actualLen > CAP_24) { trussType = '30'; capPerM = CAP_30; }
+      let selfKgPerM = trussType === '30' ? 10.5 : 7;
+      let trussWeight = actualLen * selfKgPerM;
+      let totalHang = ledLoad + trussWeight;
+      if (trussType === '24' && totalHang / actualLen > CAP_24) {
+        trussType = '30'; capPerM = CAP_30;
+        selfKgPerM = 10.5;
+        trussWeight = actualLen * selfKgPerM;
+        totalHang = ledLoad + trussWeight;
+      }
+      const loadPerM = totalHang / actualLen;
+      const capacityTotal = actualLen * capPerM;
+      const ok = loadPerM <= capPerM;
+
+      const MOTOR_MAX_KG = 1000;
+      const motorsAuto = Math.max(2, Math.ceil(totalHang / MOTOR_MAX_KG));
+      const motors = motorOverride != null ? Math.max(2, motorOverride) : motorsAuto;
+      const loadPerMotor = totalHang / motors;
+      const motorOver = loadPerMotor > MOTOR_MAX_KG;
+
+      const motorPositions = [];
+      for (let i = 0; i < motors; i++) {
+        const pct = motors === 1 ? 50 : (i / (motors - 1)) * 100;
+        motorPositions.push({ i: i + 1, pct, distM: (pct / 100) * actualLen, load: loadPerMotor });
+      }
+
+      return {
+        id: sc.id, name: sc.name, cabinetType: sc.cabinetType || 'interior',
+        cols, rows, totalCabs, widthM, heightM, area, resW, resH, totalPx,
+        dataMaps, powerMaps,
+        totalW, totalWHw, totalP,
+        rigging: {
+          actualLen, trussType, capPerM, capacityTotal, loadPerM, totalHang,
+          pieces, motors, motorsAuto, loadPerMotor, motorPositions, lingas, bumpers,
+          trussWeight, sameWidth, overhang, ok, motorOver, layout
+        }
+      };
+    }
+
+    function calc() {
+      const snapNote = document.getElementById('snapNote');
+      const weight = parseFloat(document.getElementById('weight').value) || 14;
+      const powerW = parseFloat(document.getElementById('power').value) || 200;
+      const maxPower = Math.max(2, parseInt(document.getElementById('maxPowerChain').value) || 15);
+      const voltage = 220;
+      const hangPts = 2;
+      const maxData = parseInt(document.getElementById('maxDataPerPort').value) || 24;
+      const mount = 'flown';
+      const daisyStyle = 'serpentine';
+
+      const overrideRaw = (document.getElementById('motorOverride') || {}).value || '';
+      const motorOverride = overrideRaw !== '' ? Math.max(2, parseInt(overrideRaw) || 2) : null;
+
+      if (!screens.length) {
+        screens = [{ id: 'sc1', name: 'Principal', cols: 8, rows: 4, widthM: 4, heightM: 4, cabinetType: 'interior' }];
+      }
+
+      lastScreensCalc = screens.map(sc => calcOneScreen(sc, weight, powerW, maxPower, maxData, motorOverride));
+      syncLegacyFromScreens();
+
+      // Aggregate
+      const totalCabs = lastScreensCalc.reduce((a, s) => a + s.totalCabs, 0);
+      const totalW = lastScreensCalc.reduce((a, s) => a + s.totalW, 0);
+      const totalWHw = lastScreensCalc.reduce((a, s) => a + s.totalWHw, 0);
+      const totalP = lastScreensCalc.reduce((a, s) => a + s.totalP, 0);
+      const area = lastScreensCalc.reduce((a, s) => a + s.area, 0);
+      const dataPorts = lastScreensCalc.reduce((a, s) => a + s.dataMaps.num, 0);
+      const powerChains = lastScreensCalc.reduce((a, s) => a + s.powerMaps.num, 0);
+      const dataInter = totalCabs - dataPorts;
+      const powerInter = totalCabs - powerChains;
+      const locksH = lastScreensCalc.reduce((a, s) => a + s.rows * (s.cols - 1), 0);
+      const locksV = lastScreensCalc.reduce((a, s) => a + s.cols * (s.rows - 1), 0);
+
+      const primary = lastScreensCalc[0];
+      const cols = primary.cols, rows = primary.rows;
+      const widthM = primary.widthM, heightM = primary.heightM;
+      const resW = primary.resW, resH = primary.resH;
+      const totalPx = lastScreensCalc.reduce((a, s) => a + s.totalPx, 0);
+
+      lastData = primary.dataMaps;
+      lastPower = primary.powerMaps;
+
+      // Aggregate rigging
+      const bumpers = lastScreensCalc.reduce((a, s) => a + s.rigging.bumpers, 0);
+      const lingas = lastScreensCalc.reduce((a, s) => a + s.rigging.lingas, 0);
+      const motors = lastScreensCalc.reduce((a, s) => a + s.rigging.motors, 0);
+      const pieces = { n3: 0, n2: 0, n1: 0 };
+      lastScreensCalc.forEach(s => {
+        pieces.n3 += s.rigging.pieces.n3;
+        pieces.n2 += s.rigging.pieces.n2;
+        pieces.n1 += s.rigging.pieces.n1;
+      });
+      // dominant truss type (heaviest needed)
+      let trussType = '24';
+      lastScreensCalc.forEach(s => {
+        if (s.rigging.trussType === '30' || s.rigging.trussType === '40') trussType = s.rigging.trussType;
+      });
+      const totalHang = lastScreensCalc.reduce((a, s) => a + s.rigging.totalHang, 0);
+      const trussWeight = lastScreensCalc.reduce((a, s) => a + s.rigging.trussWeight, 0);
+      const actualLen = lastScreensCalc.reduce((a, s) => a + s.rigging.actualLen, 0);
+      const loadPerMotor = motors ? totalHang / motors : 0;
+
+      lastRigging = {
+        actualLen, trussType, pieces, motors, loadPerMotor, lingas, bumpers,
+        trussWeight, totalHang, ok: lastScreensCalc.every(s => s.rigging.ok),
+        motorOver: lastScreensCalc.some(s => s.rigging.motorOver),
+        perScreen: lastScreensCalc.map(s => ({
+          name: s.name, ...s.rigging, cols: s.cols, rows: s.rows, widthM: s.widthM
+        }))
+      };
+
+      const cabinetType = primary.cabinetType;
+      lastMeta = {
+        cols, rows, totalCabs, widthM, heightM, area, resW, resH, totalPx,
+        weight, powerW, maxPower, maxData, voltage, hangPts, mount, daisyStyle, cabinetType,
+        screenCount: lastScreensCalc.length,
+        screens: lastScreensCalc.map(s => ({
+          id: s.id, name: s.name, cols: s.cols, rows: s.rows, totalCabs: s.totalCabs,
+          widthM: s.widthM, heightM: s.heightM, cabinetType: s.cabinetType,
+          resW: s.resW, resH: s.resH
+        }))
+      };
+
+      const current = totalP / voltage;
+      const ampPerCircuit = 16;
+      const circuits = Math.ceil(current / (ampPerCircuit * 0.8));
+
+      // Snap note
+      if (mode === 'meters') {
+        const notes = lastScreensCalc.map(s => `${s.name}: ${s.cols}×${s.rows} → ${s.widthM.toFixed(2)}×${s.heightM.toFixed(2)} m`);
+        snapNote.textContent = notes.join(' · ');
+        snapNote.classList.add('show');
+      } else snapNote.classList.remove('show');
+
+      // Display totals
+      const multi = lastScreensCalc.length > 1;
+      document.getElementById('totalCabs').textContent = totalCabs + (multi ? ` (${lastScreensCalc.length} pant.)` : '');
+      document.getElementById('layout').textContent = multi
+        ? lastScreensCalc.map(s => `${s.name} ${s.cols}×${s.rows}`).join(' · ')
+        : `${cols} × ${rows}`;
+      document.getElementById('widthM').textContent = multi
+        ? lastScreensCalc.map(s => s.widthM.toFixed(2) + ' m').join(' · ')
+        : widthM.toFixed(2) + ' m';
+      document.getElementById('heightM').textContent = multi
+        ? lastScreensCalc.map(s => s.heightM.toFixed(2) + ' m').join(' · ')
+        : heightM.toFixed(2) + ' m';
+      document.getElementById('area').textContent = area.toFixed(2) + ' m²';
+      document.getElementById('resolution').textContent = multi
+        ? lastScreensCalc.map(s => `${s.resW}×${s.resH}`).join(' · ')
+        : `${resW} × ${resH}`;
+      document.getElementById('totalPixels').textContent = totalPx.toLocaleString('es-AR');
+
+      document.getElementById('totalWeight').textContent = totalW.toFixed(0) + ' kg';
+      document.getElementById('weightWithHw').textContent = totalWHw.toFixed(0) + ' kg';
+      document.getElementById('totalPower').textContent = (totalP / 1000).toFixed(2) + ' kW';
+      document.getElementById('current').textContent = current.toFixed(1) + ' A';
+      document.getElementById('circuits').textContent = circuits + ` × ${ampPerCircuit}A`;
+
+      document.getElementById('dataPorts').textContent = dataPorts;
+      document.getElementById('dataFromProc').textContent = dataPorts;
+      document.getElementById('dataBackup').textContent = dataPorts;
+      document.getElementById('dataInter').textContent = dataInter;
+      document.getElementById('powerChains').textContent = powerChains;
+      document.getElementById('powerFromDistro').textContent = powerChains;
+      document.getElementById('powerInter').textContent = powerInter;
+      document.getElementById('powerMaxLabel').textContent = maxPower;
+      document.getElementById('locksH').textContent = locksH;
+      document.getElementById('locksV').textContent = locksV;
+      document.getElementById('locksTotal').textContent = locksH + locksV;
+
+      lastMeta.totalW = totalW;
+      lastMeta.totalWHw = totalWHw;
+      lastMeta.totalP = totalP;
+      lastMeta.current = current;
+      lastMeta.circuits = circuits;
+      lastMeta.ampPerCircuit = ampPerCircuit;
+      lastMeta.dataPorts = dataPorts;
+      lastMeta.powerChains = powerChains;
+      lastMeta.locksH = locksH;
+      lastMeta.locksV = locksV;
+
+      // Rigging HTML per screen
+      let riggingHTML = '';
+      if (multi) {
+        riggingHTML += `<div class="result-row"><span class="label">Pantallas</span><span class="value">${lastScreensCalc.length}</span></div>`;
+        riggingHTML += `<div class="result-row"><span class="label">Bumpers total</span><span class="value">${bumpers}</span></div>`;
+        riggingHTML += `<div class="result-row"><span class="label">Lingas total</span><span class="value">${lingas}</span></div>`;
+        riggingHTML += `<div class="result-row"><span class="label">Aparejos total</span><span class="value">${motors}</span></div>`;
+        riggingHTML += `<div class="result-row"><span class="label">Truss piezas 3/2/1 m</span><span class="value">${pieces.n3} / ${pieces.n2} / ${pieces.n1}</span></div>`;
+        riggingHTML += `<div class="result-row"><span class="label">Carga total</span><span class="value warn">${totalHang.toFixed(0)} kg</span></div>`;
+      }
+      lastScreensCalc.forEach((s, idx) => {
+        const r = s.rigging;
+        let trussBar = '<div style="display:flex;gap:2px;margin:8px 0;flex-wrap:wrap">';
+        r.layout.forEach((seg, i) => {
+          const w = Math.max(28, seg * 22);
+          trussBar += `<div style="background:linear-gradient(180deg,#64748b,#334155);border:1px solid #94a3b8;border-radius:4px;padding:6px 4px;min-width:${w}px;text-align:center;font-size:0.7rem;font-weight:600;color:#e2e8f0">${seg} m</div>`;
+          if (i < r.layout.length - 1) trussBar += `<div style="align-self:center;color:#64748b;font-size:0.7rem">⊕</div>`;
+        });
+        trussBar += '</div>';
+        let motorTrack = '<div class="motor-diagram"><div style="font-size:0.75rem;color:var(--muted)">Aparejos sobre truss</div><div class="motor-track">';
+        r.motorPositions.forEach(mp => {
+          motorTrack += `<div class="motor-point${r.motorOver?' over':''}" style="left:${mp.pct}%"></div>`;
+        });
+        motorTrack += `</div><div class="motor-labels"><span>0 m</span><span>${r.actualLen.toFixed(1)} m</span></div>`;
+        r.motorPositions.forEach(mp => {
+          motorTrack += `<div style="font-size:0.75rem">A${mp.i} · ${mp.distM.toFixed(2)} m · ~${mp.load.toFixed(0)} kg</div>`;
+        });
+        motorTrack += '</div>';
+
+        riggingHTML += `
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <div style="font-weight:600;color:var(--accent);margin-bottom:8px">${s.name} · ${s.cols}×${s.rows} · ${s.widthM.toFixed(2)} m</div>
+            <div class="result-row"><span class="label">Truss</span><span class="value">${r.trussType}×${r.trussType} · ${r.actualLen.toFixed(1)} m</span></div>
+            <div class="result-row"><span class="label">Piezas 3/2/1 m</span><span class="value">${r.pieces.n3} / ${r.pieces.n2} / ${r.pieces.n1}</span></div>
+            ${trussBar}
+            <div class="result-row"><span class="label">Bumpers (1 m)</span><span class="value">${r.bumpers}</span></div>
+            <div class="result-row"><span class="label">Lingas</span><span class="value">${r.lingas}</span></div>
+            <div class="result-row"><span class="label">Aparejos</span><span class="value">${r.motors} · ~${r.loadPerMotor.toFixed(0)} kg c/u</span></div>
+            <div class="result-row"><span class="label">Carga</span><span class="value">${r.totalHang.toFixed(0)} kg · ${r.loadPerM.toFixed(0)} kg/m</span></div>
+            ${motorTrack}
+          </div>`;
+      });
+      document.getElementById('riggingResults').innerHTML = riggingHTML;
+
+      // Preview tabs
+      const tabs = document.getElementById('screenPreviewTabs');
+      if (tabs) {
+        if (lastScreensCalc.length > 1) {
+          tabs.innerHTML = lastScreensCalc.map((s, i) =>
+            `<button type="button" class="${i===previewScreenIdx?'active':''}" onclick="previewScreenIdx=${i};setPreviewScreen(${i})">${s.name}</button>`
+          ).join('');
+        } else tabs.innerHTML = '';
+      }
+      if (previewScreenIdx >= lastScreensCalc.length) previewScreenIdx = 0;
+      applyPreviewScreen(previewScreenIdx);
+
+      updateStockCompare();
+      renderFlow();
+    }
+
+    function setPreviewScreen(i) {
+      previewScreenIdx = i;
+      applyPreviewScreen(i);
+      const tabs = document.getElementById('screenPreviewTabs');
+      if (tabs) {
+        [...tabs.querySelectorAll('button')].forEach((b, idx) => b.classList.toggle('active', idx === i));
+      }
+      renderFlow();
+    }
+    function applyPreviewScreen(i) {
+      const s = lastScreensCalc[i] || lastScreensCalc[0];
+      if (!s) return;
+      lastData = s.dataMaps;
+      lastPower = s.powerMaps;
+      lastMeta.cols = s.cols;
+      lastMeta.rows = s.rows;
+      lastMeta.cabinetType = s.cabinetType;
+      renderPreview();
+    }
+
+
+    function renderPreview() {
+      if (!lastData || !lastPower || !lastMeta) return;
+      const { cols, rows } = lastMeta;
+      const isData = view === 'data';
+      const maps = isData ? lastData : lastPower;
+      const colors = isData ? DATA_COLORS : POWER_COLORS;
+      const prefix = isData ? 'P' : 'E'; // Puerto data / Enlace power
+
+      const preview = document.getElementById('preview');
+      const previewLabel = document.getElementById('previewLabel');
+      const legend = document.getElementById('legend');
+      preview.innerHTML = '';
+      legend.innerHTML = '';
+
+      const maxPreviewW = 360, maxPreviewH = 280;
+      let cabW = 32, cabH = 60;
+      if (cols * (cabW + 3) > maxPreviewW) {
+        cabW = Math.max(16, Math.floor((maxPreviewW - cols * 3) / cols));
+        cabH = Math.round(cabW * 1.85);
+      }
+      if (rows * (cabH + 3) > maxPreviewH) {
+        cabH = Math.max(24, Math.floor((maxPreviewH - rows * 3) / rows));
+        cabW = Math.max(14, Math.floor(cabH / 1.85));
+      }
+
+      preview.style.gridTemplateColumns = `repeat(${cols}, ${cabW}px)`;
+      preview.style.gridTemplateRows = `repeat(${rows}, ${cabH}px)`;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const div = document.createElement('div');
+          div.className = 'cab';
+          const p = maps.chainId[r][c];
+          const color = colors[p % colors.length];
+          div.style.background = `linear-gradient(160deg, ${color} 0%, ${shade(color, -28)} 100%)`;
+          div.style.border = `1px solid ${shade(color, 25)}`;
+
+          if (r === 0 && c === 0) div.classList.add('corner-tl');
+          if (r === 0 && c === cols - 1) div.classList.add('corner-tr');
+          if (r === rows - 1 && c === 0) div.classList.add('corner-bl');
+          if (r === rows - 1 && c === cols - 1) div.classList.add('corner-br');
+          if (r === rows - 1) div.classList.add('bottom-row');
+
+          const info = maps.chainInfo[p];
+          const isIn = info.in.r === r && info.in.c === c;
+          const isOut = info.out.r === r && info.out.c === c;
+          const arrow = maps.arrowMap[r][c];
+
+          if (arrow) {
+            const arr = document.createElement('div');
+            arr.className = 'arrow';
+            arr.textContent = arrow;
+            div.appendChild(arr);
+          }
+
+          if (cols <= 16 && rows <= 12) {
+            const portTag = document.createElement('div');
+            portTag.className = 'port-tag';
+            portTag.textContent = `${prefix}${p + 1}`;
+            div.appendChild(portTag);
+          }
+
+          if (isIn || isOut) {
+            const ioTag = document.createElement('div');
+            ioTag.className = 'io-tag';
+            if (isIn && isOut) {
+              ioTag.classList.add('both');
+              ioTag.textContent = 'IN/OUT';
+            } else if (isIn) {
+              ioTag.classList.add('in');
+              ioTag.textContent = 'IN';
+            } else {
+              ioTag.classList.add('out');
+              ioTag.textContent = 'OUT';
+            }
+            div.appendChild(ioTag);
+          }
+
+          preview.appendChild(div);
+        }
+      }
+
+      const counts = maps.chainInfo.map(ch => ch.count);
+      const balanced = counts.length <= 1 || counts.every(c => Math.abs(c - counts[0]) <= 1);
+      const tipo = isData ? 'Data' : 'Power';
+      previewLabel.textContent = `${cols}×${rows} · ${maps.num} cadena${maps.num > 1 ? 's' : ''} ${tipo} · ${balanced ? 'equilibrado' : 'optimizado'} · flechas = sentido`;
+
+      maps.chainInfo.forEach((ch, i) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        const sw = document.createElement('div');
+        sw.className = 'legend-swatch';
+        sw.style.background = colors[i % colors.length];
+        item.appendChild(sw);
+        item.appendChild(document.createTextNode(`${prefix}${i + 1} · ${ch.count} gab`));
+        legend.appendChild(item);
+      });
+    }
+
+    function renderFlow() {
+      if (!lastData || !lastPower || !lastMeta) return;
+      const isData = view === 'data';
+      const maps = isData ? lastData : lastPower;
+      const colors = isData ? DATA_COLORS : POWER_COLORS;
+      const { rows, daisyStyle, maxData, maxPower, totalCabs } = lastMeta;
+      const maxPer = isData ? maxData : maxPower;
+      const counts = maps.chainInfo.map(ch => ch.count);
+
+      document.getElementById('connTitle').textContent = isData
+        ? '🔌 Data · Cables · Hot-Backup'
+        : '⚡ Power · Conexiones eléctricas (sin backup)';
+
+      const note = document.getElementById('bottomNote');
+      note.className = 'bottom-note' + (isData ? '' : ' power');
+      note.innerHTML = isData
+        ? '✓ <strong>IN y OUT en la fila inferior</strong> · Flechas = sentido del data · Hot-backup en sentido contrario'
+        : '✓ <strong>Cables de power entran por abajo</strong> · Reparto pareja · Preferido ≤' + maxPower + ' gab/cadena · Sin backup';
+
+      const flowBox = document.getElementById('flowBox');
+      flowBox.className = 'flow-box' + (isData ? '' : ' power');
+
+      const maxInChains = Math.max(...counts);
+      const atLimit = !isData && maxInChains >= maxPower;
+
+      let html = '';
+      if (isData) {
+        html += `<strong>Conexión de data</strong><br>`;
+        html += `Serpentina: sube una columna, baja la siguiente. IN y OUT abajo siempre que sea posible.<br>`;
+        html += `Reparto: <strong>${counts.join(' + ')}</strong> = ${totalCabs} (máx ${maxData}/puerto).<br><br>`;
+      } else {
+        html += `<strong>Conexión de power (electricidad) — sin backup</strong><br>`;
+        html += `Cables entran por abajo. Cada cadena arranca desde el distro / breaker.<br>`;
+        html += `Reparto: <strong>${counts.join(' + ')}</strong> = ${totalCabs} · Cadena más larga: <strong>${maxInChains}</strong> gabinetes.<br><br>`;
+      }
+
+      html += `<div class="chain-list">`;
+      maps.chainInfo.forEach((ch, i) => {
+        const color = colors[i % colors.length];
+        const inB = ch.in.r === rows - 1;
+        const outB = ch.out.r === rows - 1;
+        const label = isData ? `Puerto ${i + 1}` : `Cadena E${i + 1}`;
+        const nearLimit = !isData && ch.count >= maxPower;
+        html += `
+          <div class="chain-item">
+            <span class="chain-dot" style="background:${color}"></span>
+            <span>
+              <strong>${label}</strong> · ${ch.count} gabinetes${nearLimit ? ' <span style="color:#fbbf24">⚠ límite</span>' : ''}<br>
+              IN (${ch.in.c + 1},${ch.in.r + 1})${inB ? ' ↓ abajo' : ''} → 
+              OUT (${ch.out.c + 1},${ch.out.r + 1})${outB ? ' ↓ abajo' : ''}
+              ${inB && outB ? ' <span style="color:#86efac">✓ ambos abajo</span>' : ''}
+            </span>
+          </div>`;
+      });
+      html += `</div>`;
+
+      if (isData) {
+        html += `<br><strong>Hot-Backup:</strong> desde el puerto de backup al OUT y sentido contrario hasta el IN. Ambos cables por abajo.`;
+      } else {
+        html += `<br><strong>Sin backup eléctrico:</strong> cada cadena es independiente. Si falla un cable, esa zona se apaga.`;
+        if (atLimit) {
+          html += `<br><br><div style="background:#3b1f0a;border:1px solid #f59e0b;border-radius:8px;padding:10px;color:#fcd34d">
+            <strong>⚠ AVISO DE SEGURIDAD — Límite de power</strong><br>
+            Hay cadenas con <strong>${maxInChains}</strong> gabinetes (preferido ≤${maxPower}).<br>
+            <strong>No uses el brillo al máximo</strong> en esta configuración. Bajá el brillo (recomendado ≤70–80%) para no sobrecargar cables, conectores y fuentes.
+          </div>`;
+        }
+      }
+
+      flowBox.innerHTML = html;
+    }
+
+    function updateEventName() {
+      if (lastMeta) lastMeta.eventName = document.getElementById('eventName').value || '';
+    }
+
+    function getConfig() {
+      return {
+        version: 1,
+        eventName: (document.getElementById('eventName') || {}).value || '',
+        savedAt: new Date().toISOString(),
+        cabinetType: (document.getElementById('cabinetType') || {}).value || 'interior',
+        screens: screens.map(s => ({ ...s })),
+        mode,
+        cols: document.getElementById('cols').value,
+        rows: document.getElementById('rows').value,
+        widthInput: document.getElementById('widthInput').value,
+        heightInput: document.getElementById('heightInput').value,
+        weight: document.getElementById('weight').value,
+        power: document.getElementById('power').value,
+        maxPowerChain: document.getElementById('maxPowerChain').value,
+        maxDataPerPort: document.getElementById('maxDataPerPort').value,
+        motorOverride: (document.getElementById('motorOverride') || {}).value || '',
+        results: lastMeta ? {
+          totalCabs: lastMeta.totalCabs,
+          widthM: lastMeta.widthM,
+          heightM: lastMeta.heightM,
+          resW: lastMeta.resW,
+          resH: lastMeta.resH,
+          totalWHw: lastMeta.totalWHw,
+          totalP: lastMeta.totalP,
+          dataPorts: lastMeta.dataPorts,
+          powerChains: lastMeta.powerChains
+        } : null,
+        rigging: lastRigging
+      };
+    }
+
+    function exportConfig() {
+      const cfg = getConfig();
+      const name = (cfg.eventName || 'evento').replace(/[^\w\-áéíóúñÁÉÍÓÚÑ ]+/g, '').trim() || 'evento';
+      const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vilink-calculadora-${name}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importConfig(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const cfg = JSON.parse(reader.result);
+          if (cfg.eventName != null) document.getElementById('eventName').value = cfg.eventName;
+          if (cfg.cabinetType && document.getElementById('cabinetType')) document.getElementById('cabinetType').value = cfg.cabinetType;
+          if (cfg.screens && cfg.screens.length) {
+            screens = cfg.screens.map((s, i) => ({
+              id: s.id || ('sc' + i),
+              name: s.name || (i === 0 ? 'Principal' : 'Secundaria ' + i),
+              cols: parseInt(s.cols) || 4,
+              rows: parseInt(s.rows) || 3,
+              widthM: parseFloat(s.widthM) || 2,
+              heightM: parseFloat(s.heightM) || 3,
+              cabinetType: s.cabinetType || 'interior'
+            }));
+          } else if (cfg.cols || cfg.rows) {
+            screens = [{
+              id: 'sc1', name: 'Principal',
+              cols: parseInt(cfg.cols) || 8, rows: parseInt(cfg.rows) || 4,
+              widthM: parseFloat(cfg.widthInput) || 4, heightM: parseFloat(cfg.heightInput) || 4,
+              cabinetType: cfg.cabinetType || 'interior'
+            }];
+          }
+          if (cfg.mode) setMode(cfg.mode);
+          else renderScreensUI();
+          const set = (id, v) => { if (v != null && document.getElementById(id)) document.getElementById(id).value = v; };
+          set('cols', cfg.cols);
+          set('rows', cfg.rows);
+          set('widthInput', cfg.widthInput);
+          set('heightInput', cfg.heightInput);
+          set('weight', cfg.weight);
+          set('power', cfg.power);
+          set('maxPowerChain', cfg.maxPowerChain);
+          set('maxDataPerPort', cfg.maxDataPerPort);
+          set('motorOverride', cfg.motorOverride);
+          calc();
+        } catch (e) {
+          alert('No se pudo importar el archivo. Verificá que sea un JSON de esta calculadora.');
+        }
+        ev.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function printSummary() {
+      if (!lastMeta) { calc(); }
+      const m = lastMeta;
+      const ev = (document.getElementById('eventName') || {}).value || 'Sin nombre';
+      const r = lastRigging;
+      let html = `<h1>ViLink Calculadora — Resumen de armado LED</h1>`;
+      html += `<p><strong>Evento:</strong> ${ev}<br><strong>Fecha:</strong> ${new Date().toLocaleString('es-AR')}</p>`;
+      html += `<h2>Pantalla</h2><table>
+        <tr><th>Tipo</th><td>${m.cabinetType === 'exterior' ? 'Exterior' : 'Interior'}</td></tr>
+        <tr><th>Gabinetes</th><td>${m.totalCabs} (${m.cols} × ${m.rows})</td></tr>
+        <tr><th>Tamaño</th><td>${m.widthM.toFixed(2)} m × ${m.heightM.toFixed(2)} m · ${m.area.toFixed(2)} m²</td></tr>
+        <tr><th>Resolución</th><td>${m.resW} × ${m.resH}</td></tr>
+        <tr><th>Peso (con hardware)</th><td>${(m.totalWHw || 0).toFixed(0)} kg</td></tr>
+        <tr><th>Potencia máx.</th><td>${((m.totalP || 0) / 1000).toFixed(2)} kW · ${(m.current || 0).toFixed(1)} A</td></tr>
+        <tr><th>Circuitos</th><td>${m.circuits || '—'} × ${m.ampPerCircuit || ''}A</td></tr>
+      </table>`;
+      html += `<h2>Data y power</h2><table>
+        <tr><th>Puertos data</th><td>${m.dataPorts || '—'}</td></tr>
+        <tr><th>Cadenas power</th><td>${m.powerChains || '—'}</td></tr>
+        <tr><th>Locks H / V</th><td>${m.locksH || '—'} / ${m.locksV || '—'}</td></tr>
+      </table>`;
+      if (r) {
+        html += `<h2>Truss y aparejos</h2><table>
+          <tr><th>Truss</th><td>${r.trussType}×${r.trussType} cm · ${r.actualLen.toFixed(1)} m</td></tr>
+          <tr><th>Piezas 3/2/1 m</th><td>${r.pieces.n3} / ${r.pieces.n2} / ${r.pieces.n1}</td></tr>
+          <tr><th>Carga total</th><td>${r.totalHang.toFixed(0)} kg · ${r.loadPerM.toFixed(0)} kg/m</td></tr>
+          <tr><th>Bumpers (1 m)</th><td>${r.bumpers || '—'}</td></tr>
+          <tr><th>Aparejos (1 t)</th><td>${r.motors} · ~${r.loadPerMotor.toFixed(0)} kg c/u</td></tr>
+          <tr><th>Lingas / clamps</th><td>${r.lingas}</td></tr>
+        </table>`;
+        html += `<p><strong>Posiciones de aparejos:</strong><br>`;
+        r.motorPositions.forEach(mp => {
+          html += `A${mp.i} a ${mp.distM.toFixed(2)} m · ~${mp.load.toFixed(0)} kg<br>`;
+        });
+        html += `</p>`;
+      }
+      document.getElementById('printSummary').innerHTML = html;
+      window.print();
+    }
+
+    initStorage();
+    renderScreensUI();
+    calc();
+  </script>
+</body>
+</html>

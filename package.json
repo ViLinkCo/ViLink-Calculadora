@@ -1,0 +1,13 @@
+{
+  "name": "vilink-calculadora",
+  "version": "1.0.0",
+  "description": "ViLink Calculadora - Armado de pantallas LED",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
