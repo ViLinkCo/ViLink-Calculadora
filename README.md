@@ -17,3 +17,7 @@ Abrí `index.html` en el navegador. Funciona offline.
 - Stock por ítem y por sección de truss (24×24, 30×30, 40×40, 30×40)
 - Eventos activos con reserva de stock
 - Exportar / importar JSON · Imprimir resumen
+
+<img width="710" height="513" alt="Captura de pantalla Calculadora 1" src="https://github.com/user-attachments/assets/c35227cc-bb68-4997-8aed-0c41b20b9a7c" />
+
+<img width="703" height="545" alt="Captura de pantalla Calculadora 2" src="https://github.com/user-attachments/assets/5bae77a6-14cb-434d-b53e-3904e1df71d8" />
